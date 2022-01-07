@@ -1,0 +1,34 @@
+! load clo values from csv schedule
+
+Schedule:File,
+  clo_schedule,       				! Name
+  Any Number,						! ScheduleType
+  C:\Users\BT\Desktop\EMS\clo_schedule.csv,   	! Name of File
+  3,                  				! Column Number
+  4,                  				! Rows to Skip at Top
+  8760,               				! Number of Hours of Data
+  Semicolon;          				! Column Separator
+
+EnergyManagementSystem:Sensor,
+   Schedule_Value_Sensor, 	! Name
+   clo_schedule,		! Object Variable Name
+   Schedule Value;		! Object Type
+
+EnergyManagementSystem:Actuator,
+   Schedule_Value_Actuator,	! Name
+   DEFAULT CLOTHING SCHEDULE (NORTHERN HEMISPHERE),					! Actuated Component Unique Name
+   Schedule:Compact,												! Actuated Component Type
+   Schedule Value;													! Actuated Component Control Type
+
+Output:Variable, clo_schedule, Schedule Value, Hourly;
+!Output:Variable, Default clothing schedule (Northern hemisphere), Schedule Value, Hourly;
+Output:Variable, *, Schedule Value, Hourly;
+
+EnergyManagementSystem:ProgramCallingManager,
+   Change Schedule, 				! EMS ProgramCalling Name
+   BeginTimestepBeforePredictor, 	! EP Model Calling Point
+   ChangeCloSchedule; 				! Program Name
+
+EnergyManagementSystem:Program,
+    ChangeCloSchedule, 	! Program Name
+	SET Schedule_Value_Actuator = Schedule_Value_Sensor;

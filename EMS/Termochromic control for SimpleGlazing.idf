@@ -1,0 +1,50 @@
+! Script changes the window contstruction (simple glazing) based on the site outdoor air drybulb temperature.
+
+EnergyManagementSystem:Sensor, SensorDBT, Environment, Site Outdoor Air Drybulb Temperature;
+
+EnergyManagementSystem:Actuator,
+   Window_Construction,
+   BLOCK1:ZONE1_WALL_5_0_0_0_0_0_WIN,
+   Surface,
+   Construction State;
+
+WindowMaterial:SimpleGlazingSystem,
+    SimpleGlazing1,          !- Name
+    5.8,                     !- U-Factor {W/m2-K}
+    0.65,                    !- Solar Heat Gain Coefficient
+    0.8;                     !- Visible Transmittance
+
+WindowMaterial:SimpleGlazingSystem,
+    SimpleGlazing2,          !- Name
+    0.8,                     !- U-Factor {W/m2-K}
+    0.25,                    !- Solar Heat Gain Coefficient
+    0.4;                     !- Visible Transmittance
+
+Construction,
+    GlazingConstruction1,         !- Name
+    SimpleGlazing1;               !- Outside Layer
+
+Construction,
+    GlazingConstruction2,         !- Name
+    SimpleGlazing2;               !- Outside Layer
+
+EnergyManagementSystem:ConstructionIndexVariable,
+    GlazingConstruction1,
+    GlazingConstruction1;
+
+EnergyManagementSystem:ConstructionIndexVariable,
+    GlazingConstruction2,
+    GlazingConstruction2;
+
+EnergyManagementSystem:ProgramCallingManager,
+    Simple thermochromic window emulator,
+    BeginTimestepBeforePredictor,
+    ProgramName;
+
+EnergyManagementSystem:Program,
+    ProgramName,
+    IF SensorDBT >= 23.0,
+      Set Window_Construction = GlazingConstruction2,
+    ELSE,
+      SET Window_Construction = GlazingConstruction1,
+    ENDIF;
