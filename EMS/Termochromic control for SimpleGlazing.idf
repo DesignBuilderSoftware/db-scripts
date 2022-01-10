@@ -2,31 +2,33 @@
 
 EnergyManagementSystem:Sensor, SensorDBT, Environment, Site Outdoor Air Drybulb Temperature;
 
+<ForAllExternalWindows>
 EnergyManagementSystem:Actuator,
-   Window_Construction,
-   BLOCK1:ZONE1_WALL_5_0_0_0_0_0_WIN,
+   Actuator_<LoopWindowVariableName>,
+   <LoopWindowIDFName>,
    Surface,
    Construction State;
+<LoopNextWindow>
 
 WindowMaterial:SimpleGlazingSystem,
-    SimpleGlazing1,          !- Name
-    5.8,                     !- U-Factor {W/m2-K}
-    0.65,                    !- Solar Heat Gain Coefficient
-    0.8;                     !- Visible Transmittance
+    SimpleGlazing1,          		!- Name
+    5.8,                     		!- U-Factor {W/m2-K}
+    0.65,                    		!- Solar Heat Gain Coefficient
+    0.8;                     		!- Visible Transmittance
 
 WindowMaterial:SimpleGlazingSystem,
-    SimpleGlazing2,          !- Name
-    0.8,                     !- U-Factor {W/m2-K}
-    0.25,                    !- Solar Heat Gain Coefficient
-    0.4;                     !- Visible Transmittance
+    SimpleGlazing2,          		!- Name
+    0.8,                     		!- U-Factor {W/m2-K}
+    0.25,                    		!- Solar Heat Gain Coefficient
+    0.4;                     		!- Visible Transmittance
 
 Construction,
-    GlazingConstruction1,         !- Name
-    SimpleGlazing1;               !- Outside Layer
+    GlazingConstruction1,           !- Name
+    SimpleGlazing1;                 !- Layer
 
 Construction,
-    GlazingConstruction2,         !- Name
-    SimpleGlazing2;               !- Outside Layer
+    GlazingConstruction2,           !- Name
+    SimpleGlazing2;                 !- Layer
 
 EnergyManagementSystem:ConstructionIndexVariable,
     GlazingConstruction1,
@@ -44,7 +46,11 @@ EnergyManagementSystem:ProgramCallingManager,
 EnergyManagementSystem:Program,
     ProgramName,
     IF SensorDBT >= 23.0,
-      Set Window_Construction = GlazingConstruction2,
+      <ForAllExternalWindows>
+      SET Actuator_<LoopWindowVariableName> = GlazingConstruction2,
+      <LoopNextWindow>
     ELSE,
-      SET Window_Construction = GlazingConstruction1,
+      <ForAllExternalWindows>
+      SET Actuator_<LoopWindowVariableName> = GlazingConstruction1,
+      <LoopNextWindow>
     ENDIF;
