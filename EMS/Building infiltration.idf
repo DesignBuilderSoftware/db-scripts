@@ -1,0 +1,41 @@
+! Variables and Meters below describe building infiltration
+
+! Output:Variable,*,Zone Infiltration Current Density Volume Flow Rate,hourly; !- HVAC Average [m3/s]
+
+<ForAllZones>
+EnergyManagementSystem:Sensor,
+	Zone_Infiltration_<LoopZoneVariableName>, !Name
+	<LoopZoneIDFName>,! Output:Variable or Output:Meter Index Key Name
+	Zone Infiltration Current Density Volume Flow Rate; ! Output:Variable or Output:Meter Name
+EnergyManagementSystem:InternalVariable,
+	Zone_Multiplier_<LoopZoneVariableName>,
+	<LoopZoneIDFName>,
+	Zone Multiplier;
+<LoopNextZone>	
+
+EnergyManagementSystem:GlobalVariable,
+	Building_Infiltration;
+
+EnergyManagementSystem:OutputVariable,
+	Building Infiltration Variable [m3/s], ! Name ! Optionally change units
+	Building_Infiltration, ! EMS Variable Name
+	Averaged, ! Type of Data in Variable
+	ZoneTimestep; !, ! Update Frequency
+	!,
+	!m3/s; ! Units
+
+EnergyManagementSystem:ProgramCallingManager,
+	Building_Infiltration,
+	EndOfZoneTimestepBeforeZoneReporting,
+	Building_Infiltration_Program;
+
+EnergyManagementSystem:Program,
+	Building_Infiltration_Program,
+	SET Building_Infiltration = 0,
+	<ForAllZones>
+	SET Building_Infiltration = Building_Infiltration + Zone_Infiltration_<LoopZoneVariableName> * Zone_Multiplier_<LoopZoneVariableName>,
+	<LoopNextZone>
+	! SET Building_Infiltration = Building_Infiltration * 2119, ! Optionally convert units from m3/s to cfm
+	;
+
+Output:Variable,*,Building Infiltration Variable,hourly; ! [m3/s]
