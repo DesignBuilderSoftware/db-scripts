@@ -1,7 +1,7 @@
 /*
 Include cooling and heating sizing in results set.
 
-Note - DesignBuilder will not be able to load the results.
+The results can be accessed via DesignBuilder Results Viewer.
 
 */
 
