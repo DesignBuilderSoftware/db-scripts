@@ -5,6 +5,8 @@
 ! Heating starts to meet 24.1C setpoint (22 + 2 + 0.1) and stops once 24C is exceeded (the offset works as a safety factor)
 ! Once the setpoint is met, heating setpoint is reduced to 21.9C (22 - 0.1).
 ! When temperature drops below 22C, heating setpoint increases to 24.1C again
+!
+! Note that the script applies only to the "Simple HVAC" and "Detailed HVAC" > "Simple Data" mode (where DesignBuilder generates zone-specific themorstat schedules).
 
 EnergyManagementSystem:Program,
    InitializeVariables,
