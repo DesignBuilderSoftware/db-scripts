@@ -130,3 +130,7 @@ dmypy.json
 
 # Pycharm data
 .idea
+
+# VS Data
+.vs/
+obj/

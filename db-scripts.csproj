@@ -1,0 +1,139 @@
+﻿<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B6C1BF30-066F-455B-BB0B-82FD4F5C5C9C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <NoStandardLibraries>false</NoStandardLibraries>
+    <AssemblyName>ClassLibrary</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RootNamespace>db_scripts</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="DB.Api">
+      <HintPath>..\..\..\..\..\Program Files (x86)\DesignBuilder\Lib\DB.Api.dll</HintPath>
+    </Reference>
+    <Reference Include="DB.Extensibility.Contracts">
+      <HintPath>..\..\..\..\..\Program Files (x86)\DesignBuilder\Lib\DB.Extensibility.Contracts.dll</HintPath>
+    </Reference>
+    <Reference Include="EpNet">
+      <HintPath>..\..\..\..\..\Program Files (x86)\DesignBuilder\Lib\EpNet.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include=".gitignore" />
+    <Content Include="EMS\Building infiltration.idf" />
+    <Content Include="EMS\count occupied hours.idf" />
+    <Content Include="EMS\Custom Script KPI Example 3 Discomfort Area.idf" />
+    <Content Include="EMS\load clo values from csv schedule.idf" />
+    <Content Include="EMS\Meter objects.idf" />
+    <Content Include="EMS\Mixed mode with CO2 control.idf" />
+    <Content Include="EMS\report all schedules.idf" />
+    <Content Include="EMS\schedule venting factor.idf" />
+    <Content Include="EMS\Termochromic control for SimpleGlazing.idf" />
+    <Content Include="EMS\thermostat dt on off control.idf" />
+    <Content Include="py\custom_KPI_1_db_eplusout_reader.py" />
+    <Content Include="py\custom_KPI_2_htm_EUI.py" />
+    <Content Include="py\custom_KPI_3_db_eplusout_reader_EMS.py" />
+    <Content Include="py\custom_KPI_4_TM52.py" />
+    <Content Include="py\custom_KPI_5_TM59.py" />
+    <Content Include="py\optimisation_constant_openable_area.py" />
+    <Content Include="py\optimisation_heating_cooling_efficiency.py" />
+    <Content Include="py\optimisation_TM59_split_AB.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".git\config" />
+    <None Include=".git\description" />
+    <None Include=".git\HEAD" />
+    <None Include=".git\hooks\applypatch-msg.sample" />
+    <None Include=".git\hooks\commit-msg.sample" />
+    <None Include=".git\hooks\fsmonitor-watchman.sample" />
+    <None Include=".git\hooks\post-update.sample" />
+    <None Include=".git\hooks\pre-applypatch.sample" />
+    <None Include=".git\hooks\pre-commit.sample" />
+    <None Include=".git\hooks\pre-merge-commit.sample" />
+    <None Include=".git\hooks\pre-push.sample" />
+    <None Include=".git\hooks\pre-rebase.sample" />
+    <None Include=".git\hooks\pre-receive.sample" />
+    <None Include=".git\hooks\prepare-commit-msg.sample" />
+    <None Include=".git\hooks\push-to-checkout.sample" />
+    <None Include=".git\hooks\update.sample" />
+    <None Include=".git\index" />
+    <None Include=".git\info\exclude" />
+    <None Include=".git\logs\HEAD" />
+    <None Include=".git\logs\refs\heads\master" />
+    <None Include=".git\logs\refs\remotes\origin\HEAD" />
+    <None Include=".git\objects\pack\pack-ef7641da89ed318205f1aca9b1540980e769aa88.idx" />
+    <None Include=".git\objects\pack\pack-ef7641da89ed318205f1aca9b1540980e769aa88.pack" />
+    <None Include=".git\packed-refs" />
+    <None Include=".git\refs\heads\master" />
+    <None Include=".git\refs\remotes\origin\HEAD" />
+    <None Include=".vs\db-scripts\FileContentIndex\3f3019ce-eb75-4fc1-8c1a-6970c8e5e58d.vsidx" />
+    <None Include=".vs\db-scripts\FileContentIndex\b77b807f-0776-4d0f-9b2e-6940a5f4141a.vsidx" />
+    <None Include=".vs\db-scripts\FileContentIndex\ce04cf19-bf9b-406a-a21b-bb138cffe311.vsidx" />
+    <None Include=".vs\db-scripts\v17\.wsuo" />
+    <None Include=".vs\ProjectSettings.json" />
+    <None Include=".vs\slnx.sqlite" />
+    <None Include=".vs\VSWorkspaceState.json" />
+    <None Include="EMS\gasFiredChillerObjects" />
+    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="cs\addCentralDOAS.cs" />
+    <Compile Include="cs\addNodeOutputs.cs" />
+    <Compile Include="cs\addPipeOutdoor.cs" />
+    <Compile Include="cs\addReturnStreamCooler.cs" />
+    <Compile Include="cs\ahuNightVentilationManager.cs" />
+    <Compile Include="cs\applyNightCycleFCUs.cs" />
+    <Compile Include="cs\checkProposed.cs" />
+    <Compile Include="cs\desuperheater.cs" />
+    <Compile Include="cs\dlControloff.cs" />
+    <Compile Include="cs\energyRecoveryVentilator.cs" />
+    <Compile Include="cs\flatPlateHeatExchanger.cs" />
+    <Compile Include="cs\gasFiredChiller.cs" />
+    <Compile Include="cs\headeredPumps.cs" />
+    <Compile Include="cs\includeSizingResults.cs" />
+    <Compile Include="cs\optimisationUpdateHeatingCoolingCop.cs" />
+    <Compile Include="cs\overridePeopleRadiantFraction.cs" />
+    <Compile Include="cs\slinky.cs" />
+    <Compile Include="cs\steamHumidifier.cs" />
+    <Compile Include="cs\temperatureSourceReplaceDistrictHeating.cs" />
+    <Compile Include="cs\temperatureSourceReplaceGroundHX.cs" />
+    <Compile Include="cs\warmestTemperatureFlow.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include=".git\objects\info\" />
+    <Folder Include=".git\refs\tags\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSHARP.Targets" />
+  <ProjectExtensions>
+    <VisualStudio AllowExistingFolder="true" />
+  </ProjectExtensions>
+</Project>
