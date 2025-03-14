@@ -35,7 +35,7 @@ namespace DB.Extensibility.Scripts
             {
                 string zoneName = infiltration[1];
                 infiltration["Design Flow Rate Calculation Method"].Value = "Flow/ExteriorWallArea";
-                infiltration["Flow Rate per Exterior Surface Area"].Value = zoneInfiltrationRates[zoneName];
+                infiltration["Flow per Exterior Surface Area"].Value = (double.Parse(zoneInfiltrationRates[zoneName]) / 3600).ToString();
             }
 
             idfReader.Save();
