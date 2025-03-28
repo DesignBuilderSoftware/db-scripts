@@ -13,7 +13,6 @@ using System.Windows.Forms;
 using EpNet;
 using DB.Api;
 using DB.Extensibility.Contracts;
-using System.Security.Policy;
 
 namespace DB.Extensibility.Scripts
 {
