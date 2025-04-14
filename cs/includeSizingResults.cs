@@ -5,6 +5,7 @@ The results can be accessed via DesignBuilder Results Viewer.
 
 */
 
+using System.Runtime;
 using System.Collections.Generic;
 using DB.Extensibility.Contracts;
 using EpNet;
