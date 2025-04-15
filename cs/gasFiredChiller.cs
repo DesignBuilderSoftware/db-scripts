@@ -1,7 +1,8 @@
 /*
-Replace District Heating (name: HW Plant) and District Cooling (Name: CHW Plant) with ChillerHeater:Absorption:DirectFired
+Replace District Heating and District Cooling source plant components with ChillerHeater:Absorption:DirectFired object.
 
-Relevant E+ objects need to be added as additional objects (via Extra IDF or EMS scripts).
+ChillerHeater properties can be adjusted in the string boilerplate.
+
  */
 
 using System.Runtime;
@@ -28,15 +29,13 @@ namespace DB.Extensibility.Scripts
             const string chwLoopName = "CHW Loop";
             const string districtHeatingName = "District Heating";
             const string districtCoolingName = "District Cooling";
-            int chillerNominalCapacity = 100000;
 
             ApplyDirectFiredChiller(
                 chillerName, 
                 hwLoopName, 
                 chwLoopName, 
                 districtHeatingName,
-                districtCoolingName, 
-                chillerNominalCapacity);
+                districtCoolingName);
 
             Reader.Save();
         }
@@ -46,8 +45,7 @@ namespace DB.Extensibility.Scripts
             string hwLoopName,
             string chwLoopName,
             string districtHeatingName,
-            string districtCoolingName,
-            int chillerNominalCapacity)
+            string districtCoolingName)
         {
             const string chillerType = "ChillerHeater:Absorption:DirectFired";
             const string heatingPlaceholderObjectType = "DistrictHeating";
@@ -73,31 +71,30 @@ namespace DB.Extensibility.Scripts
             string chwInletNode = districtCooling["Chilled Water Inlet Node Name"].Value;
             string chwOutletNode = districtCooling["Chilled Water Outlet Node Name"].Value;
 
-            string chillerHeater = GetChillerHeaterIdfObjects(chillerName, chillerNominalCapacity, hwInletNode,
-                hwOutletNode, chwInletNode, chwOutletNode);
+            string chillerHeater = GetChillerHeaterIdfObjects(chillerName, hwInletNode, hwOutletNode, chwInletNode, chwOutletNode);
             Reader.Load(chillerHeater);
 
             Reader.Remove(districtHeating);
             Reader.Remove(districtCooling);
         }
 
-        public string GetChillerHeaterIdfObjects(string chillerName, int capacity, string hwInletNode,
+        public string GetChillerHeaterIdfObjects(string chillerName, string hwInletNode,
             string hwOutletNode, string chwInletNode, string chwOutletNode)
         {
             string template = @"ChillerHeater:Absorption:DirectFired,
     {0},                      !- Name
-    {1},                      !- Nominal Cooling Capacity W
+    Autosize,                  !- Nominal Cooling Capacity W
     0.8,                      !- Heating to Cooling Capacity Ratio
     0.97,                     !- Fuel Input to Cooling Output Ratio
     1.25,                     !- Fuel Input to Heating Output Ratio
     0.01,                     !- Electric Input to Cooling Output Ratio
     0.005,                    !- Electric Input to Heating Output Ratio
-    {4},                      !- Chilled Water Inlet Node Name
-    {5},                      !- Chilled Water Outlet Node Name
+    {3},                      !- Chilled Water Inlet Node Name
+    {4},                      !- Chilled Water Outlet Node Name
     {0} Chiller OA Node,      !- Condenser Inlet Node Name
     ,                         !- Condenser Outlet Node Name
-    {2},                      !- Hot Water Inlet Node Name
-    {3},                      !- Hot Water Outlet Node Name
+    {1},                      !- Hot Water Inlet Node Name
+    {2},                      !- Hot Water Outlet Node Name
     0.000001,                 !- Minimum Part Load Ratio
     1.0,                      !- Maximum Part Load Ratio
     0.6,                      !- Optimum Part Load Ratio
@@ -161,7 +158,7 @@ namespace DB.Extensibility.Scripts
     50.;                      !- Maximum Value of x
 
 ";
-            return String.Format(template, chillerName, capacity, hwInletNode, hwOutletNode, chwInletNode,
+            return String.Format(template, chillerName, hwInletNode, hwOutletNode, chwInletNode,
                 chwOutletNode);
         }
 
