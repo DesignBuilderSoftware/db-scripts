@@ -2,7 +2,7 @@
 Create a basic custom KPI script using eppy html reader to read the results.
 
 Detailed information:
-https://designbuilder.co.uk/helpv7.2/#CustomKPIsExample.htm
+https://designbuilder.co.uk/helpv8.0/#CustomKPIsExample.htm
 
 """
 
