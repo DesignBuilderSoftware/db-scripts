@@ -5,6 +5,7 @@ Criteria A & B are reported as two independent output variables.
 
 Required model inputs:
 - Enable TM59 outputs
+- Enable SQLite output
 - Add two "Custom Script" KPIs:
         "TM59 Discomfort Crit A %"
         "TM59 Discomfort Crit B %"
