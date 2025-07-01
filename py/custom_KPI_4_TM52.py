@@ -3,6 +3,7 @@ Use CIBSE TM52 results as optimisation KPI.
 
 Required model inputs:
     - Enable TM52 outputs
+    - Enable SQLite output
     - Add a "Custom Script" KPI, use "TM52 Discomfort %" name
     - Run a "Standard" simulation to make sure that TM52 outputs are present
 
