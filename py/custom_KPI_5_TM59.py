@@ -3,6 +3,7 @@ Use CIBSE TM59 results as optimisation KPI.
 
 Required model inputs:
     - Enable TM59 outputs
+    - Enable SQLite output
     - Add a "Custom Script" KPI, use "TM59 Discomfort %" name
     - Run a "Standard" simulation to make sure that TM59 outputs are present
 
