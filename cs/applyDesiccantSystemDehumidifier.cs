@@ -54,7 +54,7 @@ namespace DB.Extensibility.Scripts
   Fan:SystemModel,
     {0} Desiccant Regen Fan,     !- Name
     {0} Dehumidifier Schedule,   !- Availability Schedule Name
-    {0} Outside Air Inlet Node 2,!- Air Inlet Node Name
+    {0} Outside Air Inlet Node 3,!- Air Inlet Node Name
     {0} Regen Fan Outlet Node,   !- Air Outlet Node Name
     Autosize,                    !- Design Maximum Air Flow Rate m3/s
     Continuous,              !- Speed Control Method
@@ -91,6 +91,7 @@ namespace DB.Extensibility.Scripts
     1.0;                     !- Maximum Value of x  
 
 OutdoorAir:Node,{0} Outside Air Inlet Node 2;
+OutdoorAir:Node,{0} Outside Air Inlet Node 3;
 
   Schedule:Compact, 
    {0} Dehumidifier Schedule,! Name
