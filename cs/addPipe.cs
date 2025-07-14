@@ -6,6 +6,7 @@ using System.Runtime;
 using System;
 using System.Linq;
 using System.Windows.Forms;
+using System.Globalization;
 
 using DB.Extensibility.Contracts;
 using EpNet;
@@ -109,7 +110,7 @@ namespace DB.Extensibility.Scripts
     ,                        !- Ambient Air Velocity Schedule Name
     {5},                     !- Pipe Inside Diameter m
     {6};                     !- Pipe Length m";
-            return String.Format(pipe, name, pipeConstructionName, inletNodeName, outletNodeName, zoneName, pipeInsideDiameter, pipeLength);
+            return String.Format(CultureInfo.InvariantCulture, pipe, name, pipeConstructionName, inletNodeName, outletNodeName, zoneName, pipeInsideDiameter, pipeLength);
         }
 
         public string GetOutdoorPipe(string name, string inletNodeName, string outletNodeName, string pipeConstructionName, double pipeInsideDiameter, double pipeLength)
@@ -125,7 +126,7 @@ namespace DB.Extensibility.Scripts
 
   OutdoorAir:Node,
     {0} Outdoor Air Node;   !- Name";
-            return String.Format(pipe, name, pipeConstructionName, inletNodeName, outletNodeName, pipeInsideDiameter, pipeLength);
+            return String.Format(CultureInfo.InvariantCulture, pipe, name, pipeConstructionName, inletNodeName, outletNodeName, pipeInsideDiameter, pipeLength);
         }
 
 
@@ -201,7 +202,7 @@ namespace DB.Extensibility.Scripts
     0.5;                     !- Visible Absorptance
 
 ";
-            string pipeConstruction = String.Format(pipeConstructionTemplate, pipeConstructionName, pipeInsulationName, pipeSteelName, insulationThickness);
+            string pipeConstruction = String.Format(CultureInfo.InvariantCulture, pipeConstructionTemplate, pipeConstructionName, pipeInsulationName, pipeSteelName, insulationThickness);
             reader.Load(pipeConstruction);
         }
     }
