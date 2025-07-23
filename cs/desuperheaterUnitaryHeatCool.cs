@@ -65,7 +65,7 @@ namespace DB.Extensibility.Scripts
             if (string.IsNullOrEmpty(reheatCoilType))
             {
                 MessageBox.Show("Skipping unit: " + unitaryName + ", reheat coil is not included." +
-								"\nMake sure that the unit uses CoolReheat humidity control.");
+                                "\nMake sure that the unit uses CoolReheat humidity control.");
                 return;
             }
 
