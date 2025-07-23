@@ -34,14 +34,14 @@ namespace DB.Extensibility.Scripts
         {
             string template = @"Coil:Heating:Desuperheater,
   {0},				!- Coil Name
-  {1},				!- Availability Schedule
-  0.3,				!- Heat Reclaim Recovery Efficiency
-  {2},				!- Coil Air Inlet Node Name
-  {3},		        !- Coil Air Outlet Node Name
-  {4},				!- Heating Source Type
-  {5},				!- Heating Source Name
-  {6},			    !- Coil Temperature Setpoint Node Name
-  0.1;				!- Parasitic Electric Load W";
+  {1},              !- Availability Schedule
+  0.3,              !- Heat Reclaim Recovery Efficiency
+  {2},              !- Coil Air Inlet Node Name
+  {3},              !- Coil Air Outlet Node Name
+  {4},              !- Heating Source Type
+  {5},              !- Heating Source Name
+  {6},              !- Coil Temperature Setpoint Node Name
+  0.1;              !- Parasitic Electric Load W";
             return string.Format(
                 template, 
                 name, 
@@ -89,13 +89,11 @@ namespace DB.Extensibility.Scripts
             foreach (IdfObject unitary in Reader["AirLoopHVAC:UnitaryHeatCool"])
             {
                 string name = unitary[0].Value;
-
                 if (name.ToLower().Contains("desuperheater"))
                 {
                     AddDesuperheaterToUnitary(unitary);
                 }
             }
-
             Reader.Save();
         }
     }
