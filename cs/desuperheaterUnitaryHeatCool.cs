@@ -33,7 +33,7 @@ namespace DB.Extensibility.Scripts
         private string GetDesuperheaterCoil(string name, string coolingCoilType, string coolingCoilName, IdfObject reheatCoil)
         {
             string template = @"Coil:Heating:Desuperheater,
-  {0},				!- Coil Name
+  {0},              !- Coil Name
   {1},              !- Availability Schedule
   0.3,              !- Heat Reclaim Recovery Efficiency
   {2},              !- Coil Air Inlet Node Name
@@ -64,8 +64,8 @@ namespace DB.Extensibility.Scripts
 
             if (string.IsNullOrEmpty(reheatCoilType))
             {
-                MessageBox.Show("Reheat coil is not defined for unitary unit: " + unitaryName + "." +
-                                "\nMake sure that the unit uses CoolReheat humidity control.");
+                MessageBox.Show("Skipping unit: " + unitaryName + ", reheat coil is not included." +
+								"\nMake sure that the unit uses CoolReheat humidity control.");
                 return;
             }
 
