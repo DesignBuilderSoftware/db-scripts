@@ -110,6 +110,7 @@
     <Compile Include="cs\addNodeOutputs.cs" />
     <Compile Include="cs\addPipeOutdoor.cs" />
     <Compile Include="cs\addReturnStreamCooler.cs" />
+    <Compile Include="cs\addSolarTranspiredCollector.cs" />
     <Compile Include="cs\ahuNightVentilationManager.cs" />
     <Compile Include="cs\applyNightCycleFCUs.cs" />
     <Compile Include="cs\checkProposed.cs" />
