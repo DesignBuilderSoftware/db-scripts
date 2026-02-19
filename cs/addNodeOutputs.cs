@@ -1,11 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Forms;
-using DB.Extensibility.Contracts;
-using EpNet;
-
-namespace DB.Extensibility.Scripts
-
 /*
 Reporting all node outputs can be difficult as output files tend to be enormous due to
 huge amount of data (especially for bigger models).
@@ -44,6 +36,13 @@ System Node Setpoint Mass Flow Rate
 System Node Requested Mass Flow Rate
 */
 
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Forms;
+using DB.Extensibility.Contracts;
+using EpNet;
+
+namespace DB.Extensibility.Scripts
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {

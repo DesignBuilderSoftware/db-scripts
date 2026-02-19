@@ -226,7 +226,7 @@ namespace DB.Extensibility.Scripts
                 );
             }
         }
-        
+
         public class SolarCollectorMultisystem
         {
             public string SolarCollectorName { get; set; }
