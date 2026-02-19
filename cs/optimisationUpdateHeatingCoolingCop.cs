@@ -1,6 +1,5 @@
 /*
- Script: optimisationUpdateHeatingCoolingCop.cs
- Description: Reads optimisation variables from the "OptimisationVariables" table
+ Reads optimisation variables from the "OptimisationVariables" table
  (expected keys: "heatingCOP" and "coolingEER") and updates the EnergyPlus
  IDF accordingly. Actions performed by the script:
     - Sets the "Rated COP" field on the
@@ -11,8 +10,7 @@
     - If a variable value equals "UNKNOWN", a MessageBox is shown and that value is not applied.
     - The IDF is saved after modifications.
  Usage:
-    - Ensure the `OptimisationVariables` table contains the current values before
-        running this script.
+    - Ensure the `OptimisationVariables` table contains the current values before running this script.
 */
 
 using System.Windows.Forms;
