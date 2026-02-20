@@ -81,7 +81,8 @@ namespace DB.Extensibility.Scripts
         public string GetChillerHeaterIdfObjects(string chillerName, string hwInletNode,
             string hwOutletNode, string chwInletNode, string chwOutletNode)
         {
-            string template = @"ChillerHeater:Absorption:DirectFired,
+            string template = @"
+ChillerHeater:Absorption:DirectFired,
     {0},                      !- Name
     Autosize,                  !- Nominal Cooling Capacity W
     0.8,                      !- Heating to Cooling Capacity Ratio
@@ -120,7 +121,7 @@ namespace DB.Extensibility.Scripts
 
  OutdoorAir:Nodelist, {0} Chiller OA Node;   ! - Outside air node
 
- Curve:Biquadratic,
+Curve:Biquadratic,
     {0} GasAbsFlatBiQuad,     !- Name
     1.000000000,              !- Coefficient1 Constant
     0.000000000,              !- Coefficient2 x
@@ -133,7 +134,7 @@ namespace DB.Extensibility.Scripts
     0.,                       !- Minimum Value of y
     50.;                      !- Maximum Value of y
 
-  Curve:Quadratic,
+Curve:Quadratic,
     {0} GasAbsFlatQuad,       !- Name
     1.000000000,              !- Coefficient1 Constant
     0.000000000,              !- Coefficient2 x
@@ -141,7 +142,7 @@ namespace DB.Extensibility.Scripts
     0.,                       !- Minimum Value of x
     50.;                      !- Maximum Value of x
 
-  Curve:Quadratic,
+Curve:Quadratic,
     {0} GasAbsLinearQuad,     !- Name
     0.000000000,              !- Coefficient1 Constant
     1.000000000,              !- Coefficient2 x
@@ -149,7 +150,7 @@ namespace DB.Extensibility.Scripts
     0.,                       !- Minimum Value of x
     50.;                      !- Maximum Value of x
 
-  Curve:Quadratic,
+Curve:Quadratic,
     {0} GasAbsInvLinearQuad,  !- Name
     1.000000000,              !- Coefficient1 Constant
     -1.000000000,             !- Coefficient2 x

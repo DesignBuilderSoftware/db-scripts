@@ -108,6 +108,7 @@ Schedule:Compact,
    1;";
 
         string dehumidifierSpmBoilerplate = @"
+
 SetpointManager:MultiZone:Humidity:Maximum,
    {0} Humidity Setpoint Manager,                       ! - Component name
    {0},                                                 ! - HVAC air loop name

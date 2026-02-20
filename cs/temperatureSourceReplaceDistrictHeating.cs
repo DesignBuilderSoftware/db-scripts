@@ -18,7 +18,8 @@ namespace DB.Extensibility.Scripts
     public class IdfFindAndReplace : ScriptBase, IScript
     {
 
-        string boilerplate = @"PlantComponent:TemperatureSource,
+        string boilerplate = @"
+PlantComponent:TemperatureSource,
       {0},                     !- Name
       {1},                     !- Inlet Node
       {2},                     !- Outlet Node

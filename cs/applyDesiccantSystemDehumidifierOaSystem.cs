@@ -42,7 +42,7 @@ Dehumidifier:Desiccant:System,
     50,                      !- Exhaust Fan Maximum Power W
     {0} ExhaustFanPerfCurve; !- Exhaust Fan Power Curve Name
 
-  HeatExchanger:Desiccant:BalancedFlow,
+HeatExchanger:Desiccant:BalancedFlow,
     {0} Desiccant Heat Exchanger,  !- Name
     {0} Dehumidifier Schedule,     !- Availability Schedule Name
     {0} Regen Fan Outlet Node,!- Regeneration Air Inlet Node Name
@@ -52,7 +52,7 @@ Dehumidifier:Desiccant:System,
     HeatExchanger:Desiccant:BalancedFlow:PerformanceDataType1,  !- Heat Exchanger Performance Object Type
     HXDesPerf1;              !- Heat Exchanger Performance Name
 
-  Fan:SystemModel,
+Fan:SystemModel,
     {0} Desiccant Regen Fan,     !- Name
     {0} Dehumidifier Schedule,   !- Availability Schedule Name
     {0} Outside Air Inlet Node 3,!- Air Inlet Node Name
@@ -70,7 +70,7 @@ Dehumidifier:Desiccant:System,
     0.7,                     !- Fan Total Efficiency
     {0} FanPerfCurve;        ! -  Electric Power Function of Flow Fraction Curve Name
 
- Curve:Quartic,
+Curve:Quartic,
    {0} FanPerfCurve,         ! Curve Name
     0,                       ! CoefficientC1
     1,                       ! CoefficientC2
@@ -82,7 +82,7 @@ Dehumidifier:Desiccant:System,
     0,                       ! Minimum Curve Output
     1;                       ! Maximum Curve Output
 
-  Curve:Cubic,
+Curve:Cubic,
    {0} ExhaustFanPerfCurve,  !- Name
     0,                       !- Coefficient1 Constant
     1,                       !- Coefficient2 x

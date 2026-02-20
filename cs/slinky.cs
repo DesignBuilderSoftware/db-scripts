@@ -18,7 +18,8 @@ namespace DB.Extensibility.Scripts
     public class IdfFindAndReplace : ScriptBase, IScript
     {
         string objectName = "Ground Heat Exchanger";
-        string slinkyBoilerPlate = @"GroundHeatExchanger:Slinky,
+        string slinkyBoilerPlate = @"
+GroundHeatExchanger:Slinky,
   {0},              !- Name
   {1},              !- Inlet Node
   {2},              !- Outlet Node
@@ -42,7 +43,8 @@ namespace DB.Extensibility.Scripts
   KATemps,          !- Name of Undisturbed Ground Temperature Object
   10;               !- Maximum length of simulation [years]";
 
-        string ground = @"  Site:GroundTemperature:Undisturbed:KusudaAchenbach,
+        string ground = @"
+Site:GroundTemperature:Undisturbed:KusudaAchenbach,
   KATemps,                 !- Name
   1.8,                     !- Soil Thermal Conductivity {W/m-K}
   920,                     !- Soil Density {kg/m3}
@@ -111,3 +113,8 @@ namespace DB.Extensibility.Scripts
         }
     }
 }
+
+
+
+
+

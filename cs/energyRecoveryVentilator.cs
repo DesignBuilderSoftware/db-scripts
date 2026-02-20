@@ -28,7 +28,7 @@ ZoneHVAC:EnergyRecoveryVentilator,
     {0} Exhaust Fan,                          !- Exhaust Air Fan Name
     {0} OA Controller;                        !- Controller Name
 	
-  ZoneHVAC:EnergyRecoveryVentilator:Controller,
+ZoneHVAC:EnergyRecoveryVentilator:Controller,
     {0} OA Controller,                        !- Name
     ,                                         !- Temperature High Limit
     ,                                         !- Temperature Low Limit
@@ -43,7 +43,7 @@ ZoneHVAC:EnergyRecoveryVentilator,
     ,                                         !- High Humidity Outdoor Air Flow Ratio
     No;                                       !- Control High Indoor Humidity Based on Outdoor Humidity Ratio
 	
-  Fan:SystemModel,
+Fan:SystemModel,
     {0} Supply Fan,                           !- Name
     {1},                                      !- Availability Schedule Name
     {0} Heat Recovery Outlet Node,            !- Air Inlet Node Name
@@ -60,7 +60,7 @@ ZoneHVAC:EnergyRecoveryVentilator,
     ,                                         !- Electric Power Per Unit Flow Rate Per Unit Pressure
     0.50;                                     !- Fan Total Efficiency
 
-  Fan:SystemModel,
+Fan:SystemModel,
     {0} Exhaust Fan,                          !- Name
     {1},                                      !- Availability Schedule Name
     {0} Heat Recovery Secondary Outlet Node,  !- Air Inlet Node Name
@@ -77,7 +77,7 @@ ZoneHVAC:EnergyRecoveryVentilator,
     ,                                         !- Electric Power Per Unit Flow Rate Per Unit Pressure
     0.50;                                     !- Fan Total Efficiency
 	
-  HeatExchanger:AirToAir:SensibleAndLatent,
+HeatExchanger:AirToAir:SensibleAndLatent,
     {0} OA Heat Recovery,                     !- Name
     {1},                                      !- Availability Schedule Name
     {2},                                      !- Nominal Supply Air Flow Rate
@@ -99,7 +99,8 @@ ZoneHVAC:EnergyRecoveryVentilator,
     MinimumExhaustTemperature,                !- Frost Control Type
     1.7;                                      !- Threshold Temperature";
 
-        string spmBoilerPlate = @"SetpointManager:Scheduled,
+        string spmBoilerPlate = @"
+SetpointManager:Scheduled,
     Heat Exchanger Supply Air Temp Manager,  !- Name
     Temperature,                             !- Control Variable
     Heat Exchanger Supply Air Temp Sch,      !- Schedule Name
@@ -108,7 +109,7 @@ ZoneHVAC:EnergyRecoveryVentilator,
 	NodeList,
     {0};                                     !- Name
 	
-	Schedule:Compact,
+Schedule:Compact,
     Heat Exchanger Supply Air Temp Sch,      !- Name
     Temperature,                             !- Schedule Type Limits Name
     Through: 12/31,                          !- Field 1

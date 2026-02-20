@@ -67,7 +67,8 @@ namespace DB.Extensibility.Scripts
 
         public string GetConstantPump(IdfObject pump, int nPumpsInBank)
         {
-            string headeredPump = @"HeaderedPumps:ConstantSpeed,
+            string headeredPump = @"
+HeaderedPumps:ConstantSpeed,
   {0},           !- Name
   {1},           !- Inlet Node Name
   {2},           !- Outlet Node Name
@@ -84,7 +85,8 @@ namespace DB.Extensibility.Scripts
 
         public string GetVariablePump(IdfObject pump, int nPumpsInBank)
         {
-            string headeredPump = @"HeaderedPumps:VariableSpeed,
+            string headeredPump = @"      
+HeaderedPumps:VariableSpeed,
   {0},           !- Name
   {1},           !- Inlet Node Name
   {2},           !- Outlet Node Name
