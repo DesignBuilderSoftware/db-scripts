@@ -10,12 +10,11 @@ for the "Living ach" is applied to all zones with "living" or "lkd" in the zone 
 
 """
 
-
 MECH_VENT_ACH_ATTR = "MechanicalVentilationValue"
 
 
 def filter_zones(building, *args):
-    """ Retrieve zones within a building where the zone title contains a specific key. """
+    """Retrieve zones within a building where the zone title contains a specific key."""
     for zone in (zone for block in building.BuildingBlocks for zone in block.Zones):
         zone_name = zone.GetAttribute("title")
         if any(key.lower() in zone_name.lower() for key in args):

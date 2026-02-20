@@ -8,6 +8,7 @@ This script  modifies the "% Glazing Area Opens" for each WWR - to keep the
 openable area constant (default 1m2).
 
 """
+
 import ctypes
 
 
@@ -33,5 +34,14 @@ def before_energy_idf_generation():
                         openable_percentage = str(min(openable_area / area * 100, 100))
                         opening.SetAttribute(percantage_area_opens, openable_percentage)
                         name = opening.GetAttribute("SSEPObjectNameInOP")
-                        openings_summary += ("\nOpening: " + name + "\n\t" + "Area: " + str(area) + "\n\t" + "Percentage: " + openable_percentage)
+                        openings_summary += (
+                            "\nOpening: "
+                            + name
+                            + "\n\t"
+                            + "Area: "
+                            + str(area)
+                            + "\n\t"
+                            + "Percentage: "
+                            + openable_percentage
+                        )
     show_message("Summary", openings_summary)
