@@ -19,7 +19,8 @@ namespace DB.Extensibility.Scripts
     {
         string[] airLoopNames = new string[] { "Air Loop" };
 
-        string coilBoilerPlate = @"Coil:Heating:Electric,
+        string coilBoilerPlate = @"
+Coil:Heating:Electric,
   {0},                          !- Name
   {0} Availability,             !- Availability Schedule Name
   1.00,                         !- Efficiency (%)

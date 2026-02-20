@@ -100,7 +100,8 @@ namespace DB.Extensibility.Scripts
 
         public string GetIndoorPipe(string name, string inletNodeName, string outletNodeName, string pipeConstructionName, string zoneName, double pipeInsideDiameter, double pipeLength)
         {
-            string pipe = @"  Pipe:Indoor,
+            string pipe = @"  
+Pipe:Indoor,
     {0},                     !- Name
     {1},                     !- Construction Name
     {2},                     !- Fluid Inlet Node Name
@@ -116,7 +117,8 @@ namespace DB.Extensibility.Scripts
 
         public string GetOutdoorPipe(string name, string inletNodeName, string outletNodeName, string pipeConstructionName, double pipeInsideDiameter, double pipeLength)
         {
-            string pipe = @"  Pipe:Outdoor,
+            string pipe = @"  
+Pipe:Outdoor,
     {0},                    !- Construction Name
     {1},                    !- Fluid Inlet Node Name
     {2},                    !- Fluid Outlet Node Name
@@ -125,7 +127,7 @@ namespace DB.Extensibility.Scripts
     {4},                    !- Pipe Inside Diameter
     {5};                    !- pipe length
 
-  OutdoorAir:Node,
+OutdoorAir:Node,
     {0} Outdoor Air Node;   !- Name";
             return String.Format(CultureInfo.InvariantCulture, pipe, name, pipeConstructionName, inletNodeName, outletNodeName, pipeInsideDiameter, pipeLength);
         }
@@ -175,12 +177,13 @@ namespace DB.Extensibility.Scripts
         {
             string pipeInsulationName = pipeConstructionName + " insulation";
             string pipeSteelName = pipeConstructionName + " steel";
-            string pipeConstructionTemplate = @"  Construction,
+            string pipeConstructionTemplate = @"  
+Construction,
     {0},                     !-Name
     {1},                     !-Outside Layer
     {2};                     !-Layer 2
 
-  Material,
+Material,
     {1},                     !- Name
     VeryRough,               !- Roughness
     {3},                     !- Thickness m
@@ -191,7 +194,7 @@ namespace DB.Extensibility.Scripts
     0.5,                     !- Solar Absorptance
     0.5;                     !- Visible Absorptance
 
-  Material,
+Material,
     {2},                     !- Name
     Smooth,                  !- Roughness
     3.00E-03,                !- Thickness m
@@ -201,7 +204,6 @@ namespace DB.Extensibility.Scripts
     0.9,                     !- Thermal Absorptance
     0.5,                     !- Solar Absorptance
     0.5;                     !- Visible Absorptance
-
 ";
             string pipeConstruction = String.Format(CultureInfo.InvariantCulture, pipeConstructionTemplate, pipeConstructionName, pipeInsulationName, pipeSteelName, insulationThickness);
             reader.Load(pipeConstruction);

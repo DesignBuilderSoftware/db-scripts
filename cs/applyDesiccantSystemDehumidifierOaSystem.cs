@@ -21,7 +21,8 @@ namespace DB.Extensibility.Scripts
 {
     public class DesiccantDehumidifierOaSystemScript : ScriptBase, IScript
     {
-        string dehumidifierBoilerplate = @"  Dehumidifier:Desiccant:System,
+        string dehumidifierBoilerplate = @"
+Dehumidifier:Desiccant:System,
     {0} Desiccant Dehumidifier,!- Name
     {0} Dehumidifier Schedule, !- Availability Schedule Name
     HeatExchanger:Desiccant:BalancedFlow,  !- Desiccant Heat Exchanger Object Type

@@ -21,7 +21,8 @@ namespace DB.Extensibility.Scripts
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-        string dehumidifierBoilerplate = @"  Dehumidifier:Desiccant:System,
+        string dehumidifierBoilerplate = @"  
+Dehumidifier:Desiccant:System,
     {0} Desiccant Dehumidifier,!- Name
     {0} Dehumidifier Schedule, !- Availability Schedule Name
     HeatExchanger:Desiccant:BalancedFlow,  !- Desiccant Heat Exchanger Object Type
@@ -108,7 +109,8 @@ OutdoorAir:Node,{0} Outside Air Inlet Node 3;
    .012,                                                ! - Maximum setpoint humidity ratio (kg/kg)
    {2};                                                 ! - Setpoint node list";
 
-        string desiccantHeatExchangerPerf = @" HeatExchanger:Desiccant:BalancedFlow:PerformanceDataType1,
+        string desiccantHeatExchangerPerf = @"
+HeatExchanger:Desiccant:BalancedFlow:PerformanceDataType1,
     HXDesPerf1,              !- Name
     1.05,                    !- Nominal Air Flow Rate {m3/s}
     3.25,                    !- Nominal Air Face Velocity {m/s}

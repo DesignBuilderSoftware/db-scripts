@@ -17,7 +17,8 @@ namespace DB.Extensibility.Scripts
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-        string ervBoilerPlate = @"ZoneHVAC:EnergyRecoveryVentilator,
+        string ervBoilerPlate = @"
+ZoneHVAC:EnergyRecoveryVentilator,
     {0},                                      !- Name
     {1},                                      !- Availability Schedule Name
     {0} OA Heat Recovery,                     !- Heat Exchanger Name

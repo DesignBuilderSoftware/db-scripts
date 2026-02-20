@@ -19,7 +19,8 @@ namespace DB.Extensibility.Scripts
   {
     string[] airLoopNames = new string[] { "Air Loop" };
 
-    string coolerBoilerPlate = @"EvaporativeCooler:Direct:ResearchSpecial,
+    string coolerBoilerPlate = @"
+EvaporativeCooler:Direct:ResearchSpecial,
   {0},                          !- Name
   {0} Availability,             !- Availability Schedule Name
   0.7 ,                         !- Cooler Design Effectiveness

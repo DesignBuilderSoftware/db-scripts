@@ -19,7 +19,8 @@ namespace DB.Extensibility.Scripts
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-        string nightCycleObjects = @"AvailabilityManagerAssignmentList,
+        string nightCycleObjects = @"
+AvailabilityManagerAssignmentList,
     {0},                                  !- Name
     AvailabilityManager:NightCycle,       !- Availability Manager 1 Object Type
     {1} Night Cycle Operation;            !- Availability Manager 1 Name

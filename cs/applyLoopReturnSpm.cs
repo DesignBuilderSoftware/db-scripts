@@ -21,7 +21,8 @@ namespace DB.Extensibility.Scripts
 {
     public class ApplyLoopReturnSpm : ScriptBase, IScript
     {
-        private string hwReturnSpmTemplate = @"SetpointManager:ReturnTemperature:HotWater,
+        private string hwReturnSpmTemplate = @"
+SetpointManager:ReturnTemperature:HotWater,
   {0},                       !- Name
   {1},                       !- Plant Loop Supply Outlet Node
   {2},                       !- Plant Loop Supply Inlet Node
@@ -31,7 +32,8 @@ namespace DB.Extensibility.Scripts
   ,                          !- Return Temperature Setpoint Constant Value
   ;                          !- Return Temperature Setpoint Schedule Name";
 
-        private string chwReturnSpmTemplate = @"SetpointManager:ReturnTemperature:ChilledWater,
+        private string chwReturnSpmTemplate = @"
+SetpointManager:ReturnTemperature:ChilledWater,
   {0},                       !- Name
   {1},                       !- Plant Loop Supply Outlet Node
   {2},                       !- Plant Loop Supply Inlet Node

@@ -32,7 +32,8 @@ namespace DB.Extensibility.Scripts
 
         private string GetDesuperheaterCoil(string name, string coolingCoilType, string coolingCoilName, IdfObject reheatCoil)
         {
-            string template = @"Coil:Heating:Desuperheater,
+            string template = @"
+Coil:Heating:Desuperheater,
   {0},              !- Coil Name
   {1},              !- Availability Schedule
   0.3,              !- Heat Reclaim Recovery Efficiency
