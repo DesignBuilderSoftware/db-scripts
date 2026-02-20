@@ -12,8 +12,8 @@ using DB.Extensibility.Contracts;
 using EpNet;
 
 namespace DB.Extensibility.Scripts
-{ 
-    public class IdfFindAndReplace : ScriptBase, IScript 
+{
+    public class IdfFindAndReplace : ScriptBase, IScript
     {
         // Define IDF templates
         readonly string nightVentilationTemplate = @"AvailabilityManager:NightVentilation,
@@ -107,7 +107,7 @@ Schedule:Compact,
             StringBuilder idfContent = new StringBuilder();
 
             foreach (var pair in loopControlZonePairs)
-            {    
+            {
                 string airLoopName = pair.Key;
                 string controlZoneName = pair.Value;
 

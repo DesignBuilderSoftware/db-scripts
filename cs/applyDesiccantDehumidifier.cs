@@ -128,7 +128,7 @@ Branch,
 
         public void AddDesiccantDehumidifier(
             IdfReader idfReader,
-            string airLoopName, 
+            string airLoopName,
             int position,
             int regenerationCoilCapacity,
             RegenerationCoilType regenerationCoilType = RegenerationCoilType.Fuel,
@@ -142,7 +142,7 @@ Branch,
 
             // calculate index of the field set in the main branch
             int dehumidfierBranchIndex = 2 + (position - 1) * 4;
- 
+
             // update component nodes
             string processInletNode = ahuMainBranch[dehumidfierBranchIndex - 1].Value;
             string processOutletNode = airLoopName + " Desiccant Process Outlet Node";
@@ -157,7 +157,7 @@ Branch,
             {
                 IdfObject coil = FindObject(idfReader, nextComponent["Heating Coil Object Type"].Value, nextComponent["Heating Coil Name"].Value);
                 coil["Air Inlet Node Name"].Value = processOutletNode;
-            } 
+            }
             else if (nextComponentType.Equals("CoilSystem:Cooling:DX", StringComparison.OrdinalIgnoreCase))
             {
                 IdfObject coil = FindObject(idfReader, nextComponent["Cooling Coil Object Type"].Value, nextComponent["Cooling Coil Name"].Value);

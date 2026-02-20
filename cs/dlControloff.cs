@@ -14,8 +14,8 @@ namespace DB.Extensibility.Scripts
         private void UpdateDlSchedule()
         {
             IdfReader idfReader = new IdfReader(
-    ApiEnvironment.EnergyPlusInputIdfPath,
-    ApiEnvironment.EnergyPlusInputIddPath);
+                ApiEnvironment.EnergyPlusInputIdfPath,
+                ApiEnvironment.EnergyPlusInputIddPath);
 
             IEnumerable<IdfObject> dlControls = idfReader["Daylighting:Controls"];
 

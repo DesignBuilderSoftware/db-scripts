@@ -18,23 +18,24 @@ namespace DB.Extensibility.Scripts
     public class IdfFindAndReplace : ScriptBase, IScript
     {
 
-        private IdfObject FindObject(IdfReader reader, string objectType, string objectName) {
-             return reader[objectType].First(c => c[0] == objectName);
+        private IdfObject FindObject(IdfReader reader, string objectType, string objectName)
+        {
+            return reader[objectType].First(c => c[0] == objectName);
         }
 
         private void ReplaceWarmest(IdfReader idfReader, string strategy, float turnDownRatio)
         {
-             IEnumerable<IdfObject> spms = idfReader["SetpointManager:Warmest"];
-             foreach (IdfObject spm in spms)
-             {
-                 if (spm[0].Value.ToLower().Contains("warmesttemperatureflow"))
-                 {
-                      string newSpm = GetSpmText(spm, strategy, turnDownRatio);
-                      MessageBox.Show("Replacing Warmest spm: " + spm[0].Value + " with WarmestTemperatureFlow spm." );
-                      idfReader.Load(newSpm);
-                      idfReader.Remove(spm);
-                 }
-             }
+            IEnumerable<IdfObject> spms = idfReader["SetpointManager:Warmest"];
+            foreach (IdfObject spm in spms)
+            {
+                if (spm[0].Value.ToLower().Contains("warmesttemperatureflow"))
+                {
+                    string newSpm = GetSpmText(spm, strategy, turnDownRatio);
+                    MessageBox.Show("Replacing Warmest spm: " + spm[0].Value + " with WarmestTemperatureFlow spm.");
+                    idfReader.Load(newSpm);
+                    idfReader.Remove(spm);
+                }
+            }
         }
 
         private string GetSpmText(IdfObject warmestSpm, string strategy, float turnDownRatio)
@@ -50,7 +51,7 @@ namespace DB.Extensibility.Scripts
             return String.Join(",", fields) + ";";
         }
 
-         public override void BeforeEnergySimulation()
+        public override void BeforeEnergySimulation()
         {
             IdfReader idfReader = new IdfReader(
                 ApiEnvironment.EnergyPlusInputIdfPath,

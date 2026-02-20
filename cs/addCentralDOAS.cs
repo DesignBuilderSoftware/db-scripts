@@ -21,79 +21,79 @@ namespace DB.Extensibility.Scripts
 {
    public class IdfFindAndReplace : ScriptBase, IScript
    {
-       public override void BeforeEnergySimulation()
-       {
-           IdfReader idfReader = new IdfReader(
-               ApiEnvironment.EnergyPlusInputIdfPath,
-               ApiEnvironment.EnergyPlusInputIddPath
-           );
+      public override void BeforeEnergySimulation()
+      {
+         IdfReader idfReader = new IdfReader(
+             ApiEnvironment.EnergyPlusInputIdfPath,
+             ApiEnvironment.EnergyPlusInputIddPath
+         );
 
-           DoasIdfHandler idfHandler = new DoasIdfHandler(idfReader);
+         DoasIdfHandler idfHandler = new DoasIdfHandler(idfReader);
 
-           List<string> doas1AirLoops = new List<string> { "AIRLOOP1" }; // specify air loops connected to the central DOAS
-           string chwLoopName = "CHW Loop"; // specify chw loop connected to the central DOAS cooling coil
-           string hwLoopName = "HW Loop";  // specify hw loop connected to the central DOAS heating coil
-           string doasName = "DOAS1";
-           double supplyAirTemperature = 17.5; // supply air temperature in degrees of Celsius
-           bool includeHX = true;
+         List<string> doas1AirLoops = new List<string> { "AIRLOOP1" }; // specify air loops connected to the central DOAS
+         string chwLoopName = "CHW Loop"; // specify chw loop connected to the central DOAS cooling coil
+         string hwLoopName = "HW Loop";  // specify hw loop connected to the central DOAS heating coil
+         string doasName = "DOAS1";
+         double supplyAirTemperature = 17.5; // supply air temperature in degrees of Celsius
+         bool includeHX = true;
 
-           DoasSpecs doas1 = new DoasSpecs(doasName, doas1AirLoops, hwLoopName, chwLoopName, includeHX, supplyAirTemperature);
+         DoasSpecs doas1 = new DoasSpecs(doasName, doas1AirLoops, hwLoopName, chwLoopName, includeHX, supplyAirTemperature);
 
-           // display doas specification (comment out to disable the message box pop-up)
-           MessageBox.Show(doas1.GetInfo());
+         // display doas specification (comment out to disable the message box pop-up)
+         MessageBox.Show(doas1.GetInfo());
 
-           idfHandler.LoadDoas(doas1);
-       }
+         idfHandler.LoadDoas(doas1);
+      }
    }
 
    public class DoasSpecs
    {
-       public string Name;
-       public List<string> ChildAirLoops;
-       public string HwLoopName;
-       public string ChwLoopName;
-       public bool IncludeHX;
-       public double SupplyTemperature;
+      public string Name;
+      public List<string> ChildAirLoops;
+      public string HwLoopName;
+      public string ChwLoopName;
+      public bool IncludeHX;
+      public double SupplyTemperature;
 
-       public DoasSpecs() {}
+      public DoasSpecs() { }
 
-       public DoasSpecs(string name, List<string> childAirLoops, string hwLoopName, string chwLoopName, bool includeHX, double supplyTemperature)
-       {
-           Name = name;
-           ChildAirLoops = childAirLoops;
-           HwLoopName = hwLoopName;
-           ChwLoopName = chwLoopName;
-           IncludeHX = includeHX;
-           SupplyTemperature = supplyTemperature;
-       }
+      public DoasSpecs(string name, List<string> childAirLoops, string hwLoopName, string chwLoopName, bool includeHX, double supplyTemperature)
+      {
+         Name = name;
+         ChildAirLoops = childAirLoops;
+         HwLoopName = hwLoopName;
+         ChwLoopName = chwLoopName;
+         IncludeHX = includeHX;
+         SupplyTemperature = supplyTemperature;
+      }
 
-       public string HwBranchName { get { return this.Name + " DOAS Heating Coil HW Loop Demand Side Branch"; } }
-       public string ChwBranchName { get { return this.Name + " DOAS Cooling Coil CHW Loop Demand Side Branch"; } }
-       public string FanName { get { return this.Name + "DOAS OA Supply Fan"; } }
-       public string HxName { get { return this.Name + " DOAS Heat Recovery Device"; } }
-       public string OffScheduleName { get { return this.Name + " ALWAYS_OFF"; } }
+      public string HwBranchName { get { return this.Name + " DOAS Heating Coil HW Loop Demand Side Branch"; } }
+      public string ChwBranchName { get { return this.Name + " DOAS Cooling Coil CHW Loop Demand Side Branch"; } }
+      public string FanName { get { return this.Name + "DOAS OA Supply Fan"; } }
+      public string HxName { get { return this.Name + " DOAS Heat Recovery Device"; } }
+      public string OffScheduleName { get { return this.Name + " ALWAYS_OFF"; } }
 
 
-       public string GetInfo()
-       {
-           string childLoopNames = String.Join("\n - ", this.ChildAirLoops);
-           string text = @"DOAS: {0}
+      public string GetInfo()
+      {
+         string childLoopNames = String.Join("\n - ", this.ChildAirLoops);
+         string text = @"DOAS: {0}
 HW loop: {1}
 CHW loop: {2}
 HX included: {3}
 Supply temperature: {4}
 Child air loops:
 - {5}";
-           return string.Format(text, this.Name, this.HwLoopName, this.ChwLoopName, this.IncludeHX, this.SupplyTemperature, childLoopNames);
-       }
+         return string.Format(text, this.Name, this.HwLoopName, this.ChwLoopName, this.IncludeHX, this.SupplyTemperature, childLoopNames);
+      }
 
-       public string GetIDFObjects()
-       {
-           string airLoops = String.Join(",\n", this.ChildAirLoops);
-           int airLoopCount = this.ChildAirLoops.Count;
-           string airLoopInlets = String.Join(",\n", this.ChildAirLoops.Select(x => x + " AHU Outdoor Air Inlet"));
-           string airLoopOutlets = String.Join(",\n", this.ChildAirLoops.Select(x => x + " AHU Relief Air Outlet"));
-           string idfObjects = @"
+      public string GetIDFObjects()
+      {
+         string airLoops = String.Join(",\n", this.ChildAirLoops);
+         int airLoopCount = this.ChildAirLoops.Count;
+         string airLoopInlets = String.Join(",\n", this.ChildAirLoops.Select(x => x + " AHU Outdoor Air Inlet"));
+         string airLoopOutlets = String.Join(",\n", this.ChildAirLoops.Select(x => x + " AHU Relief Air Outlet"));
+         string idfObjects = @"
 !-   ===========  ALL OBJECTS IN CLASS: SCHEDULE:COMPACT ===========
 
 Schedule:Compact,
@@ -346,60 +346,60 @@ AirLoopHVAC:ControllerList,
   Controller:WaterCoil,
   {0} DOAS Heating Coil Controller;";
 
-           return String.Format(idfObjects, this.Name, airLoopCount, airLoops, airLoopOutlets, airLoopInlets, this.SupplyTemperature, this.ChwBranchName, this.HwBranchName);
-       }
+         return String.Format(idfObjects, this.Name, airLoopCount, airLoops, airLoopOutlets, airLoopInlets, this.SupplyTemperature, this.ChwBranchName, this.HwBranchName);
+      }
    }
 
    public class DoasIdfHandler
    {
-       public IdfReader Reader;
+      public IdfReader Reader;
 
-       public DoasIdfHandler(){}
+      public DoasIdfHandler() { }
 
-       public DoasIdfHandler(IdfReader idfReader)
-       {
-           Reader = idfReader;
-       }
+      public DoasIdfHandler(IdfReader idfReader)
+      {
+         Reader = idfReader;
+      }
 
-       public IdfObject FindObject(string objectType, string objectName)
-       {
-           try
-           {
-               return this.Reader[objectType].First(c => c[0] == objectName);
-           }
-           catch(Exception e)
-           {
-               throw new Exception(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
-           }
-       }
+      public IdfObject FindObject(string objectType, string objectName)
+      {
+         try
+         {
+            return this.Reader[objectType].First(c => c[0] == objectName);
+         }
+         catch (Exception e)
+         {
+            throw new Exception(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
+         }
+      }
 
-       private void AddBranch(string loopName, string branchName)
-       {
-           IdfObject branchList = FindObject("branchList", loopName + " Demand Side Branches");
-           branchList.InsertField(branchList.Count - 1, branchName);
+      private void AddBranch(string loopName, string branchName)
+      {
+         IdfObject branchList = FindObject("branchList", loopName + " Demand Side Branches");
+         branchList.InsertField(branchList.Count - 1, branchName);
 
-           IdfObject splitter = FindObject("Connector:Splitter", loopName + " Demand Splitter");
-           splitter.InsertField(splitter.Count - 1, branchName);
+         IdfObject splitter = FindObject("Connector:Splitter", loopName + " Demand Splitter");
+         splitter.InsertField(splitter.Count - 1, branchName);
 
-           IdfObject mixer = FindObject( "Connector:Mixer", loopName + " Demand Mixer");
-           mixer.InsertField(mixer.Count - 1, branchName);
-       }
+         IdfObject mixer = FindObject("Connector:Mixer", loopName + " Demand Mixer");
+         mixer.InsertField(mixer.Count - 1, branchName);
+      }
 
-       public void LoadDoas(DoasSpecs doasSpecs)
-       {
-           string doasIdfObjects = doasSpecs.GetIDFObjects();
-           this.Reader.Load(doasIdfObjects);
+      public void LoadDoas(DoasSpecs doasSpecs)
+      {
+         string doasIdfObjects = doasSpecs.GetIDFObjects();
+         this.Reader.Load(doasIdfObjects);
 
-           AddBranch(doasSpecs.HwLoopName, doasSpecs.HwBranchName);
-           AddBranch(doasSpecs.ChwLoopName, doasSpecs.ChwBranchName);
+         AddBranch(doasSpecs.HwLoopName, doasSpecs.HwBranchName);
+         AddBranch(doasSpecs.ChwLoopName, doasSpecs.ChwBranchName);
 
-           if (!doasSpecs.IncludeHX)
-           {
-               IdfObject hx = FindObject("HeatExchanger:AirToAir:SensibleAndLatent", doasSpecs.HxName);
-               hx[1].Value = doasSpecs.OffScheduleName;
-           }
+         if (!doasSpecs.IncludeHX)
+         {
+            IdfObject hx = FindObject("HeatExchanger:AirToAir:SensibleAndLatent", doasSpecs.HxName);
+            hx[1].Value = doasSpecs.OffScheduleName;
+         }
 
-           this.Reader.Save();
-       }
+         this.Reader.Save();
+      }
    }
 }

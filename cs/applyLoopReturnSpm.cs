@@ -79,7 +79,8 @@ namespace DB.Extensibility.Scripts
                 if (name.IndexOf(chwKey, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     template = chwReturnSpmTemplate;
-                } else if (name.IndexOf(hwKey, StringComparison.OrdinalIgnoreCase) >= 0)
+                }
+                else if (name.IndexOf(hwKey, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     template = hwReturnSpmTemplate;
                 }
@@ -93,7 +94,7 @@ namespace DB.Extensibility.Scripts
         }
 
         private string GetReturnSpm(IdfReader reader, IdfObject spm, string template)
-        {   
+        {
             string nodeListName = spm[3].Value;
             IdfObject nodeList = FindObject(reader, "NodeList", nodeListName);
             string supplySideOutletNodeName = nodeList[1].Value;

@@ -20,7 +20,6 @@ using EpNet;
 using DB.Api;
 using System.Windows.Forms;
 
-
 namespace DB.Extensibility.Scripts
 {
     public class IdfFindAndReplace : ScriptBase, IScript

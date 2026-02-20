@@ -16,7 +16,7 @@ namespace DB.Extensibility.Scripts
     public class CheckProposed : ScriptBase, IScript
     {
         private bool IsCurrentProposed()
-        {   
+        {
             string ashraeType = ActiveBuilding.GetAttribute("ASHRAE901Type");
             return ashraeType == "1-Proposed";
         }

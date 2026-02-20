@@ -31,9 +31,9 @@ namespace DB.Extensibility.Scripts
             const string districtCoolingName = "District Cooling";
 
             ApplyDirectFiredChiller(
-                chillerName, 
-                hwLoopName, 
-                chwLoopName, 
+                chillerName,
+                hwLoopName,
+                chwLoopName,
                 districtHeatingName,
                 districtCoolingName);
 

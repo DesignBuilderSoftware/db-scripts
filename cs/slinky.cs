@@ -94,7 +94,7 @@ namespace DB.Extensibility.Scripts
             string newObjectType = "GroundHeatExchanger:Slinky";
 
             IdfObject groundHX = FindObject(idfReader, oldObjectType, objectName);
-            
+
             ReplaceObjectTypeInList(idfReader, "CondenserEquipmentList", oldObjectType, objectName, newObjectType, objectName);
             ReplaceObjectTypeInList(idfReader, "Branch", oldObjectType, objectName, newObjectType, objectName);
 

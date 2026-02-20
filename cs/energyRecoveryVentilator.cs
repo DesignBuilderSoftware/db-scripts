@@ -226,9 +226,9 @@ namespace DB.Extensibility.Scripts
 
             string nodeListName = "ERV HR Outlets";
             string spmObjects = String.Format(spmBoilerPlate, nodeListName);
-			idfReader.Load(spmObjects);
+            idfReader.Load(spmObjects);
             List<string> outletNodes = FindNodes(idfReader, "HeatExchanger:AirToAir:SensibleAndLatent", "Supply Air Outlet Node Name");
-            
+
             IdfObject ervNodeList = FindObject(idfReader, "NodeList", nodeListName);
             ervNodeList.AddFields(outletNodes.ToArray());
 

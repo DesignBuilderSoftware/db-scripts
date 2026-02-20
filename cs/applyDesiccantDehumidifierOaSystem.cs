@@ -124,7 +124,7 @@ namespace DB.Extensibility.Scripts
 
             // Define the regeneration inlet node, this can be either the air loop relief or outdoor air node
             string regenerationInletNode = hxObject["Exhaust Air Outlet Node Name"].Value;
-            
+
             // Load all desiccant dehumidifer related objects
             string scheduleName = airLoopName + " Desiccant unit schedule";
             string dehumidifierSchedule = String.Format(dehumidifierScheduleBoilerplate, scheduleName);
@@ -139,13 +139,13 @@ namespace DB.Extensibility.Scripts
 
             string dehumidifier = String.Format(
                 dehumidifierBoilerplate,
-                desiccantDehumidifierName, 
+                desiccantDehumidifierName,
                 scheduleName,
                 processInletNode,
                 processOutletNode,
                 dehumidifierCoilType,
-                regenerationInletNode, 
-                dehumidifierCoilName, 
+                regenerationInletNode,
+                dehumidifierCoilName,
                 dehumidiferFanName
                 );
 

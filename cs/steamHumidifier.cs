@@ -18,42 +18,43 @@ namespace DB.Extensibility.Scripts
     public class IdfFindAndReplace : ScriptBase, IScript
     {
 
-        private IdfObject FindObject(IdfReader reader, string objectType, string objectName) {
-             return reader[objectType].First(c => c[0] == objectName);
+        private IdfObject FindObject(IdfReader reader, string objectType, string objectName)
+        {
+            return reader[objectType].First(c => c[0] == objectName);
         }
 
         private void UpdateBranches(IdfReader idfReader)
         {
-             IEnumerable<IdfObject> branches = idfReader["Branch"];
-             foreach (IdfObject branch in branches)
-             {
-                 if (branch[0].Value.Contains("steamgas") && branch[0].Value.Contains("AHU Main Branch"))
-                 {
-                      UpdateBranch(idfReader, branch);
-                 }
-             }
+            IEnumerable<IdfObject> branches = idfReader["Branch"];
+            foreach (IdfObject branch in branches)
+            {
+                if (branch[0].Value.Contains("steamgas") && branch[0].Value.Contains("AHU Main Branch"))
+                {
+                    UpdateBranch(idfReader, branch);
+                }
+            }
         }
 
         private void UpdateBranch(IdfReader reader, IdfObject branch)
         {
-             const string GasHumidifierObject = "Humidifier:Steam:Gas";
-             const string EleHumidifierObject = "Humidifier:Steam:Electric";
+            const string GasHumidifierObject = "Humidifier:Steam:Gas";
+            const string EleHumidifierObject = "Humidifier:Steam:Electric";
 
-             foreach (int i in Enumerable.Range(1, (branch.Count - 2)))
-             {
-                   Field ThisField = branch.Fields[i];
-                   Field NextField = branch.Fields[i + 1];
-                   if (ThisField.Comment.ToLower().Contains("object type") && ThisField.Value.ToLower() == EleHumidifierObject.ToLower())
-                   {
-                        IdfObject EleHumidifier = FindObject(reader, EleHumidifierObject, NextField.Value);
-                        ThisField.Value = GasHumidifierObject;
-                        string humidifierText = GetHumidifierIdfText(EleHumidifier, GasHumidifierObject);
-                        reader.Load(humidifierText);
-                        MessageBox.Show("Replacing electric humidifier: " + EleHumidifier[0] + " with gas humidifier." );
-                        reader.Remove(EleHumidifier);
-                        break;
-                   }
-             }
+            foreach (int i in Enumerable.Range(1, (branch.Count - 2)))
+            {
+                Field ThisField = branch.Fields[i];
+                Field NextField = branch.Fields[i + 1];
+                if (ThisField.Comment.ToLower().Contains("object type") && ThisField.Value.ToLower() == EleHumidifierObject.ToLower())
+                {
+                    IdfObject EleHumidifier = FindObject(reader, EleHumidifierObject, NextField.Value);
+                    ThisField.Value = GasHumidifierObject;
+                    string humidifierText = GetHumidifierIdfText(EleHumidifier, GasHumidifierObject);
+                    reader.Load(humidifierText);
+                    MessageBox.Show("Replacing electric humidifier: " + EleHumidifier[0] + " with gas humidifier.");
+                    reader.Remove(EleHumidifier);
+                    break;
+                }
+            }
         }
         private string GetHumidifierIdfText(IdfObject EleHumidifier, string GasHumidifier)
         {
@@ -78,7 +79,7 @@ namespace DB.Extensibility.Scripts
             reader.Load("Output:Variable,*,Humidifier NaturalGas Rate,Runperiod;");
         }
 
-         public override void BeforeEnergySimulation()
+        public override void BeforeEnergySimulation()
         {
             IdfReader idfReader = new IdfReader(
                 ApiEnvironment.EnergyPlusInputIdfPath,
