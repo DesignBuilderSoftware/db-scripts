@@ -19,7 +19,9 @@ def after_energy_simulation():
     table_path = api_environment.EnergyPlusFolder + "eplustbl.htm"
     if path.exists(table_path):
         with open(table_path, "r") as filehandle:
-            eui_table = fasthtml.tablebyname(filehandle, "EAp2-17a. Energy Use Intensity - Electricity")
+            eui_table = fasthtml.tablebyname(
+                filehandle, "EAp2-17a. Energy Use Intensity - Electricity"
+            )
             eui_table_content = eui_table[1]
             eui = str(eui_table_content[8][1])
 

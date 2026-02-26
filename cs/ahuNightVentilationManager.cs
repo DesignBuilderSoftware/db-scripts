@@ -12,11 +12,12 @@ using DB.Extensibility.Contracts;
 using EpNet;
 
 namespace DB.Extensibility.Scripts
-{ 
-    public class IdfFindAndReplace : ScriptBase, IScript 
+{
+    public class IdfFindAndReplace : ScriptBase, IScript
     {
         // Define IDF templates
-        readonly string nightVentilationTemplate = @"AvailabilityManager:NightVentilation,
+        readonly string nightVentilationTemplate = @"
+AvailabilityManager:NightVentilation,
     {0},                     !- Name
     Night Ventilation Applicability Schedule, !- Applicability Schedule Name
     {1},                     !- Fan Schedule Name
@@ -26,7 +27,8 @@ namespace DB.Extensibility.Scripts
     0.5,                     !- Night Venting Flow Fraction
     {2};                     !- Control Zone Name";
 
-        readonly string commonObjects = @"Schedule:Compact,
+        readonly string commonObjects = @"
+Schedule:Compact,
     Night Ventilation Setpoint Schedule,  !- Name
     Any Number,              !- Schedule Type Limits Name
     Through: 12/31,          !- Field 1
@@ -107,7 +109,7 @@ Schedule:Compact,
             StringBuilder idfContent = new StringBuilder();
 
             foreach (var pair in loopControlZonePairs)
-            {    
+            {
                 string airLoopName = pair.Key;
                 string controlZoneName = pair.Value;
 

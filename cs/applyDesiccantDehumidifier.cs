@@ -21,7 +21,8 @@ namespace DB.Extensibility.Scripts
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-        string dehumidifierBoilerplate = @"  Dehumidifier:Desiccant:NoFans,
+        string dehumidifierBoilerplate = @"
+Dehumidifier:Desiccant:NoFans,
     {0} Desiccant Dehumidifier,!- Name
     {0} Dehumidifier Schedule, !- Availability Schedule Name
     {1},                     !- Process Air Inlet Node Name
@@ -41,7 +42,8 @@ namespace DB.Extensibility.Scripts
 
     OutdoorAir:Node,{0} Outside Air Inlet Node 2;";
 
-        string dehumidifierFanBoilerplate = @"  Fan:VariableVolume,
+        string dehumidifierFanBoilerplate = @"
+Fan:VariableVolume,
     {0} Desiccant Regen Fan,     !- Name
     {0} Dehumidifier Schedule,   !- Availability Schedule Name
     0.7,                     !- Fan Total Efficiency
@@ -60,7 +62,8 @@ namespace DB.Extensibility.Scripts
     {0} Outside Air Inlet Node 2,!- Air Inlet Node Name
     {0} Regen Fan Outlet Node;   !- Air Outlet Node Name";
 
-        string dehumidifierWaterCoilBoilerplate = @"  Coil:Heating:Water,
+        string dehumidifierWaterCoilBoilerplate = @"
+Coil:Heating:Water,
   {0} Desiccant Regen Coil,                                       ! - Component name
   {0} Dehumidifier Schedule,                                      ! - Availability schedule
   autosize,                                                       ! - U-factor times area value of coil (W/K)
@@ -85,7 +88,8 @@ Branch,
   {0} Desiccant Heating Coil Water Inlet Node,                    ! - Component 1 inlet node name
   {0} Desiccant Heating Coil Water Outlet Node;                   ! - Component 1 outlet node name";
 
-        string dehumidifierCoilBoilerplate = @"  Coil:Heating:Fuel,
+        string dehumidifierCoilBoilerplate = @"  
+Coil:Heating:Fuel,
     {0} Desiccant Regen Coil,    !- Name
     {0} Dehumidifier Schedule,   !- Availability Schedule Name
     NaturalGas,                  !- Fuel Type
@@ -94,7 +98,8 @@ Branch,
     {0} Regen Fan Outlet Node,   !- Air Inlet Node Name
     {0} Desiccant Heating Coil Air Outlet Node;     !- Air Outlet Node Name";
 
-        string dehumidifierScheduleBoilerplate = @"  Schedule:Compact, 
+        string dehumidifierScheduleBoilerplate = @"  
+Schedule:Compact, 
    {0} Dehumidifier Schedule,! Name
    Any Number,               ! Type
    Through: 12/31,           ! Type
@@ -102,7 +107,9 @@ Branch,
    Until: 24:00,             ! All hours in day
    1;";
 
-        string dehumidifierSpmBoilerplate = @"  SetpointManager:MultiZone:Humidity:Maximum,
+        string dehumidifierSpmBoilerplate = @"
+
+SetpointManager:MultiZone:Humidity:Maximum,
    {0} Humidity Setpoint Manager,                       ! - Component name
    {0},                                                 ! - HVAC air loop name
    .005,                                                ! - Minimum setpoint humidity ratio (kg/kg)
@@ -128,7 +135,7 @@ Branch,
 
         public void AddDesiccantDehumidifier(
             IdfReader idfReader,
-            string airLoopName, 
+            string airLoopName,
             int position,
             int regenerationCoilCapacity,
             RegenerationCoilType regenerationCoilType = RegenerationCoilType.Fuel,
@@ -142,7 +149,7 @@ Branch,
 
             // calculate index of the field set in the main branch
             int dehumidfierBranchIndex = 2 + (position - 1) * 4;
- 
+
             // update component nodes
             string processInletNode = ahuMainBranch[dehumidfierBranchIndex - 1].Value;
             string processOutletNode = airLoopName + " Desiccant Process Outlet Node";
@@ -157,7 +164,7 @@ Branch,
             {
                 IdfObject coil = FindObject(idfReader, nextComponent["Heating Coil Object Type"].Value, nextComponent["Heating Coil Name"].Value);
                 coil["Air Inlet Node Name"].Value = processOutletNode;
-            } 
+            }
             else if (nextComponentType.Equals("CoilSystem:Cooling:DX", StringComparison.OrdinalIgnoreCase))
             {
                 IdfObject coil = FindObject(idfReader, nextComponent["Cooling Coil Object Type"].Value, nextComponent["Cooling Coil Name"].Value);

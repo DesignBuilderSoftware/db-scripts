@@ -1,7 +1,7 @@
 /*
 Override radiant heat gain by people.
 
-DesignBuilder always apply default 0.3.
+DesignBuilder always applies default 0.3.
 
 */
 

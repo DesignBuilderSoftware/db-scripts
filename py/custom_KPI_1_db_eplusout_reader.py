@@ -7,7 +7,7 @@ https://designbuilder.co.uk/helpv7.2/#PythonScriptingExample2.htm
 """
 
 from db_eplusout_reader import Variable, get_results
-from db_eplusout_reader.constants import *
+from db_eplusout_reader.constants import RP
 
 
 # ensure that SQLite outputs are generated

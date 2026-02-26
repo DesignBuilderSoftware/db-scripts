@@ -21,7 +21,8 @@ namespace DB.Extensibility.Scripts
 {
     public class ApplyLoopReturnSpm : ScriptBase, IScript
     {
-        private string hwReturnSpmTemplate = @"SetpointManager:ReturnTemperature:HotWater,
+        private string hwReturnSpmTemplate = @"
+SetpointManager:ReturnTemperature:HotWater,
   {0},                       !- Name
   {1},                       !- Plant Loop Supply Outlet Node
   {2},                       !- Plant Loop Supply Inlet Node
@@ -31,7 +32,8 @@ namespace DB.Extensibility.Scripts
   ,                          !- Return Temperature Setpoint Constant Value
   ;                          !- Return Temperature Setpoint Schedule Name";
 
-        private string chwReturnSpmTemplate = @"SetpointManager:ReturnTemperature:ChilledWater,
+        private string chwReturnSpmTemplate = @"
+SetpointManager:ReturnTemperature:ChilledWater,
   {0},                       !- Name
   {1},                       !- Plant Loop Supply Outlet Node
   {2},                       !- Plant Loop Supply Inlet Node
@@ -79,7 +81,8 @@ namespace DB.Extensibility.Scripts
                 if (name.IndexOf(chwKey, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     template = chwReturnSpmTemplate;
-                } else if (name.IndexOf(hwKey, StringComparison.OrdinalIgnoreCase) >= 0)
+                }
+                else if (name.IndexOf(hwKey, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     template = hwReturnSpmTemplate;
                 }
@@ -93,7 +96,7 @@ namespace DB.Extensibility.Scripts
         }
 
         private string GetReturnSpm(IdfReader reader, IdfObject spm, string template)
-        {   
+        {
             string nodeListName = spm[3].Value;
             IdfObject nodeList = FindObject(reader, "NodeList", nodeListName);
             string supplySideOutletNodeName = nodeList[1].Value;

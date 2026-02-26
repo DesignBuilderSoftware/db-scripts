@@ -17,7 +17,8 @@ namespace DB.Extensibility.Scripts
   public class IdfFindAndReplace : ScriptBase, IScript
   {
     string[] objectNames = new string[] { "Air Loop AHU Heat Recovery Device" };
-    string hxBoilerPlate = @"HeatExchanger:AirToAir:FlatPlate,
+    string hxBoilerPlate = @"
+HeatExchanger:AirToAir:FlatPlate,
   {0},                        !- Name
   {1},                        !- Availability Schedule Name
   CounterFlow,                !- Flow Arrangement Type

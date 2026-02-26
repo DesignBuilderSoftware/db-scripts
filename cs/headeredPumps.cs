@@ -36,7 +36,7 @@ namespace DB.Extensibility.Scripts
             {
                 return reader[objectType].First(c => c[0] == objectName);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 throw new Exception(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
             }
@@ -56,7 +56,9 @@ namespace DB.Extensibility.Scripts
             {
                 headeredPump = GetConstantPump(pump, nPumpsInBank);
                 ReplaceObjectTypeInList(reader, "Branch", "Pump:ConstantSpeed", pumpName, "HeaderedPumps:ConstantSpeed", pumpName);
-            } else {
+            }
+            else
+            {
                 throw new Exception(String.Format("Invalid pump type {0}", pumpType));
             }
             reader.Load(headeredPump);
@@ -65,7 +67,8 @@ namespace DB.Extensibility.Scripts
 
         public string GetConstantPump(IdfObject pump, int nPumpsInBank)
         {
-        string headeredPump = @"HeaderedPumps:ConstantSpeed,
+            string headeredPump = @"
+HeaderedPumps:ConstantSpeed,
   {0},           !- Name
   {1},           !- Inlet Node Name
   {2},           !- Outlet Node Name
@@ -77,12 +80,13 @@ namespace DB.Extensibility.Scripts
   {7},           !- Motor Efficiency
   {8},           !- Fraction of Motor Inefficiencies to Fluid Stream
   {9};           !- Pump Control Type";
-         return String.Format(headeredPump, pump[0].Value, pump[1].Value, pump[2].Value, pump[3].Value, nPumpsInBank.ToString(), pump[4].Value, pump[5].Value, pump[6].Value, pump[7].Value, pump[8].Value);
+            return String.Format(headeredPump, pump[0].Value, pump[1].Value, pump[2].Value, pump[3].Value, nPumpsInBank.ToString(), pump[4].Value, pump[5].Value, pump[6].Value, pump[7].Value, pump[8].Value);
         }
 
         public string GetVariablePump(IdfObject pump, int nPumpsInBank)
         {
-        string headeredPump = @"HeaderedPumps:VariableSpeed,
+            string headeredPump = @"      
+HeaderedPumps:VariableSpeed,
   {0},           !- Name
   {1},           !- Inlet Node Name
   {2},           !- Outlet Node Name
@@ -101,7 +105,7 @@ namespace DB.Extensibility.Scripts
   {14};          !- Pump Control Type";
 
 
-         return String.Format(headeredPump, pump[0].Value, pump[1].Value, pump[2].Value, pump[3].Value, nPumpsInBank, pump[4].Value, pump[5].Value, pump[6].Value, pump[7].Value, pump[8].Value, pump[9].Value, pump[10].Value, pump[11].Value, pump[12].Value, pump[13].Value);
+            return String.Format(headeredPump, pump[0].Value, pump[1].Value, pump[2].Value, pump[3].Value, nPumpsInBank, pump[4].Value, pump[5].Value, pump[6].Value, pump[7].Value, pump[8].Value, pump[9].Value, pump[10].Value, pump[11].Value, pump[12].Value, pump[13].Value);
         }
 
         private void ReplaceObjectTypeInList(IdfReader idfReader, string listName, string oldObjectType, string oldObjectName, string newObjectType, string newObjectName)

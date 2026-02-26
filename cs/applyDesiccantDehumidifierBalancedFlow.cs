@@ -17,7 +17,8 @@ namespace DB.Extensibility.Scripts
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-        string desiccantHxBoilerplate = @"     HeatExchanger:Desiccant:BalancedFlow,
+        string desiccantHxBoilerplate = @"     
+HeatExchanger:Desiccant:BalancedFlow,
     {0},                                                       !- Name
     ON 24/7,                                                   !- Availability Schedule Name
     {1},                                                       !- Regeneration Air Inlet Node Name
@@ -27,7 +28,7 @@ namespace DB.Extensibility.Scripts
     HeatExchanger:Desiccant:BalancedFlow:PerformanceDataType1, !- Heat Exchanger Performance Object Type
     HXDesPerf1;                                                !- Heat Exchanger Performance Name
 
-  HeatExchanger:Desiccant:BalancedFlow:PerformanceDataType1,
+HeatExchanger:Desiccant:BalancedFlow:PerformanceDataType1,
     HXDesPerf1,              !- Name
     1.90,                    !- Nominal Air Flow Rate m3/s
     3.54,                    !- Nominal Air Face Velocity m/s

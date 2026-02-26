@@ -37,6 +37,7 @@ EnergyPlus Multi-Speed HVAC System Conversion Script
   
    DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
+
 using System.Runtime;
 using System.Linq;
 using System.Collections.Generic;
@@ -112,7 +113,7 @@ namespace DB.Extensibility.Scripts
         public void LoadCurves()
         {
             string curves = @"
-  Curve:Quadratic,
+Curve:Quadratic,
     PSZ-AC_CoolCLennoxStandard10Ton_TGA120S2B_CapFF,  !- Name
     0.77136,                 !- Coefficient1 Constant
     0.34053,                 !- Coefficient2 x
@@ -120,7 +121,7 @@ namespace DB.Extensibility.Scripts
     0.75918,                 !- Minimum Value of x
     1.13877;                 !- Maximum Value of x
 
-  Curve:Quadratic,
+Curve:Quadratic,
     PSZ-AC_CoolCLennoxStandard10Ton_TGA120S2B_EIRFFF,  !- Name
     1.20550,                 !- Coefficient1 Constant
     -0.32953,                !- Coefficient2 x
@@ -128,7 +129,7 @@ namespace DB.Extensibility.Scripts
     0.75918,                 !- Minimum Value of x
     1.13877;                 !- Maximum Value of x
 
-  Curve:Quadratic,
+Curve:Quadratic,
     PSZ-AC_CoolCLennoxStandard10Ton_TGA120S2B_PLR,  !- Name
     0.77100,                 !- Coefficient1 Constant
     0.22900,                 !- Coefficient2 x
@@ -136,7 +137,7 @@ namespace DB.Extensibility.Scripts
     0.0,                     !- Minimum Value of x
     1.0;                     !- Maximum Value of x
 
-  Curve:Biquadratic,
+Curve:Biquadratic,
     PSZ-AC_CoolCLennoxStandard10Ton_TGA120S2B_CapFT,  !- Name
     0.42415,                 !- Coefficient1 Constant
     0.04426,                 !- Coefficient2 x
@@ -149,7 +150,7 @@ namespace DB.Extensibility.Scripts
     29.00000,                !- Minimum Value of y
     46.00000;                !- Maximum Value of y
 
-  Curve:Biquadratic,
+Curve:Biquadratic,
     PSZ-AC_CoolCLennoxStandard10Ton_TGA120S2B_EIRFT,  !- Name
     1.23649,                 !- Coefficient1 Constant
     -0.02431,                !- Coefficient2 x
@@ -323,7 +324,8 @@ namespace DB.Extensibility.Scripts
 
         public string Get2SMultispeedSpecification(string multispeedSpecName, string unitName, TwoSpeedSpecification spec)
         {
-            string template = @"  UnitarySystemPerformance:Multispeed,
+            string template = @"
+UnitarySystemPerformance:Multispeed,
     {0},                     !- Name
     2,                       !- Number of Speeds for Heating
     2,                       !- Number of Speeds for Cooling
@@ -338,7 +340,8 @@ namespace DB.Extensibility.Scripts
 
         public string Get4SMultispeedSpecification(string multispeedSpecName, string unitName, FourSpeedSpecification spec)
         {
-            string template = @"  UnitarySystemPerformance:Multispeed,
+            string template = @"
+UnitarySystemPerformance:Multispeed,
     {0},                     !- Name
     4,                       !- Number of Speeds for Heating
     4,                       !- Number of Speeds for Cooling
@@ -362,7 +365,8 @@ namespace DB.Extensibility.Scripts
                 throw new Exception(
                     "Cannot get fan performance, the required placeholder object is Fan:VariableVolume., fan: " + fan["Name"].Value);
             }
-            string newFanTemplate = @"  Fan:SystemModel,
+            string newFanTemplate = @"
+Fan:SystemModel,
   {0},           !- Name
   {1},           !- Availability Schedule Name
   {2},           !- Air Inlet Node Name
@@ -413,7 +417,8 @@ namespace DB.Extensibility.Scripts
                 throw new Exception(
                     "Cannot get fan performance, the required placeholder object is Fan:VariableVolume., fan: " + fan["Name"].Value);
             }
-            string newFanTemplate = @"  Fan:SystemModel,
+            string newFanTemplate = @"
+Fan:SystemModel,
   {0},           !- Name
   {1},           !- Availability Schedule Name
   {2},           !- Air Inlet Node Name
@@ -479,7 +484,7 @@ namespace DB.Extensibility.Scripts
             string shr = coil["Gross Rated Sensible Heat Ratio"].Value;
 
             string template = @"
-  Coil:Cooling:DX:MultiSpeed,
+Coil:Cooling:DX:MultiSpeed,
     {0},                     !- Name
     {1},                     !- Availability Schedule Name
     {2},                     !- Air Inlet Node Name
@@ -574,7 +579,8 @@ namespace DB.Extensibility.Scripts
             string shr = coil["Gross Rated Sensible Heat Ratio"].Value;
 
             string template = @"
-  Coil:Cooling:DX:MultiSpeed,
+
+Coil:Cooling:DX:MultiSpeed,
     {0},                     !- Name
     {1},                     !- Availability Schedule Name
     {2},                     !- Air Inlet Node Name

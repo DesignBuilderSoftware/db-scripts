@@ -166,7 +166,8 @@ namespace DB.Extensibility.Scripts
 
             public string GetIdfString()
             {
-                string solarCollectorTemplate = @"  SurfaceProperty:OtherSideConditionsModel,
+                string solarCollectorTemplate = @"  
+SurfaceProperty:OtherSideConditionsModel,
     {0} Conditions Model,    !- Name
     GapConvectionRadiation;  !- Type of Modeling
 
@@ -226,7 +227,7 @@ namespace DB.Extensibility.Scripts
                 );
             }
         }
-        
+
         public class SolarCollectorMultisystem
         {
             public string SolarCollectorName { get; set; }
@@ -239,10 +240,12 @@ namespace DB.Extensibility.Scripts
 
             public string GetIdfString()
             {
-                string template = @"  SolarCollector:UnglazedTranspired:Multisystem,
+                string template = @"  
+SolarCollector:UnglazedTranspired:Multisystem,
     {0},                    !- Solar Collector Name" + Environment.NewLine;
 
-                string nodesTemplate = @"    {0},               !- Outdoor Air System {5} Collector Inlet Node
+                string nodesTemplate = @"    
+    {0},                !- Outdoor Air System {5} Collector Inlet Node
     {1},                !- Outdoor Air System {5} Collector Outlet Node
     {2},                !- Outdoor Air System {5} Mixed Air Node
     {3}{4}              !- Outdoor Air System {5} Zone Node" + Environment.NewLine;
@@ -267,7 +270,8 @@ namespace DB.Extensibility.Scripts
 
         public void AddFreeHeatingSetpointSchedule(string name, double setpoint)
         {
-            string template = @"  Schedule:Compact,
+            string template = @"  
+Schedule:Compact,
     {0},                     !- Name
     Temperature,             !- Schedule Type Limits Name
     Through: 12/31,          !- Field 1
@@ -351,7 +355,8 @@ namespace DB.Extensibility.Scripts
 
         public void AddSolarCollectorOutputs()
         {
-            string variables = @"Output:Variable,*,Solar Collector Heat Exchanger Effectiveness,hourly; !- HVAC Average []
+            string variables = @"
+Output:Variable,*,Solar Collector Heat Exchanger Effectiveness,hourly; !- HVAC Average []
 Output:Variable,*,Solar Collector Leaving Air Temperature,hourly; !- HVAC Average [C]
 Output:Variable,*,Solar Collector Outside Face Suction Velocity,hourly; !- HVAC Average [m/s]
 Output:Variable,*,Solar Collector Surface Temperature,hourly; !- HVAC Average [C]

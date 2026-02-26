@@ -79,7 +79,12 @@ def after_energy_simulation():
     except ZeroDivisionError:
         raise NoResults("No TM52 results found!")
 
-    show_message("Results TM52", "{}% fails, total_area {}m2, fail_area: {}m2".format(percentage_area_fail, total_area, fail_area))
+    show_message(
+        "Results TM52",
+        "{}% fails, total_area {}m2, fail_area: {}m2".format(
+            percentage_area_fail, total_area, fail_area
+        ),
+    )
 
     table = site.GetTable("ParamResultsTmp")
     record = table.AddRecord()

@@ -19,7 +19,8 @@ namespace DB.Extensibility.Scripts
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-        string nightCycleObjects = @"AvailabilityManagerAssignmentList,
+        string nightCycleObjects = @"
+AvailabilityManagerAssignmentList,
     {0},                                  !- Name
     AvailabilityManager:NightCycle,       !- Availability Manager 1 Object Type
     {1} Night Cycle Operation;            !- Availability Manager 1 Name
@@ -34,17 +35,17 @@ namespace DB.Extensibility.Scripts
     3600,                                 !- Cycling Run Time s
     {2};                                  !- Control zone name";
 
-       public IdfObject FindObject(IdfReader reader, string objectType, string objectName)
-       {
-           try
-           {
-               return reader[objectType].First(c => c[0] == objectName);
-           }
-           catch(Exception e)
-           {
-               throw new Exception(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
-           }
-       }
+        public IdfObject FindObject(IdfReader reader, string objectType, string objectName)
+        {
+            try
+            {
+                return reader[objectType].First(c => c[0] == objectName);
+            }
+            catch (Exception e)
+            {
+                throw new Exception(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
+            }
+        }
 
         public override void BeforeEnergySimulation()
         {
@@ -59,7 +60,7 @@ namespace DB.Extensibility.Scripts
             {
                 // Add assignment list and nigt cycle manager to the idf
                 string fanCoilName = fanCoil["Name"].Value;
-                string name =  fanCoilName + " Assignment List";
+                string name = fanCoilName + " Assignment List";
                 string zoneName = fanCoilName.Replace(" Fan Coil Unit", "");
                 fanCoil.AddField(name, "! - Availability Manager List Name");
                 fanCoil["Availability Schedule Name"].Value = "On 24/7";

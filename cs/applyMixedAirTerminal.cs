@@ -47,7 +47,8 @@ namespace DB.Extensibility.Scripts
         }
 
         // Boilerplate for new Mixer terminal
-        string terminalBoilerPlate = @"AirTerminal:SingleDuct:Mixer,
+        string terminalBoilerPlate = @"
+AirTerminal:SingleDuct:Mixer,
     {0},                   !- Name
     {1},                   !- ZoneHVAC Unit Object Type
     {2},                   !- ZoneHVAC Unit Object Name

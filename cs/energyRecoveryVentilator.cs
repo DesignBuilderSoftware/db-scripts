@@ -17,7 +17,8 @@ namespace DB.Extensibility.Scripts
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-        string ervBoilerPlate = @"ZoneHVAC:EnergyRecoveryVentilator,
+        string ervBoilerPlate = @"
+ZoneHVAC:EnergyRecoveryVentilator,
     {0},                                      !- Name
     {1},                                      !- Availability Schedule Name
     {0} OA Heat Recovery,                     !- Heat Exchanger Name
@@ -27,7 +28,7 @@ namespace DB.Extensibility.Scripts
     {0} Exhaust Fan,                          !- Exhaust Air Fan Name
     {0} OA Controller;                        !- Controller Name
 	
-  ZoneHVAC:EnergyRecoveryVentilator:Controller,
+ZoneHVAC:EnergyRecoveryVentilator:Controller,
     {0} OA Controller,                        !- Name
     ,                                         !- Temperature High Limit
     ,                                         !- Temperature Low Limit
@@ -42,7 +43,7 @@ namespace DB.Extensibility.Scripts
     ,                                         !- High Humidity Outdoor Air Flow Ratio
     No;                                       !- Control High Indoor Humidity Based on Outdoor Humidity Ratio
 	
-  Fan:SystemModel,
+Fan:SystemModel,
     {0} Supply Fan,                           !- Name
     {1},                                      !- Availability Schedule Name
     {0} Heat Recovery Outlet Node,            !- Air Inlet Node Name
@@ -59,7 +60,7 @@ namespace DB.Extensibility.Scripts
     ,                                         !- Electric Power Per Unit Flow Rate Per Unit Pressure
     0.50;                                     !- Fan Total Efficiency
 
-  Fan:SystemModel,
+Fan:SystemModel,
     {0} Exhaust Fan,                          !- Name
     {1},                                      !- Availability Schedule Name
     {0} Heat Recovery Secondary Outlet Node,  !- Air Inlet Node Name
@@ -76,7 +77,7 @@ namespace DB.Extensibility.Scripts
     ,                                         !- Electric Power Per Unit Flow Rate Per Unit Pressure
     0.50;                                     !- Fan Total Efficiency
 	
-  HeatExchanger:AirToAir:SensibleAndLatent,
+HeatExchanger:AirToAir:SensibleAndLatent,
     {0} OA Heat Recovery,                     !- Name
     {1},                                      !- Availability Schedule Name
     {2},                                      !- Nominal Supply Air Flow Rate
@@ -98,7 +99,8 @@ namespace DB.Extensibility.Scripts
     MinimumExhaustTemperature,                !- Frost Control Type
     1.7;                                      !- Threshold Temperature";
 
-        string spmBoilerPlate = @"SetpointManager:Scheduled,
+        string spmBoilerPlate = @"
+SetpointManager:Scheduled,
     Heat Exchanger Supply Air Temp Manager,  !- Name
     Temperature,                             !- Control Variable
     Heat Exchanger Supply Air Temp Sch,      !- Schedule Name
@@ -107,7 +109,7 @@ namespace DB.Extensibility.Scripts
 	NodeList,
     {0};                                     !- Name
 	
-	Schedule:Compact,
+Schedule:Compact,
     Heat Exchanger Supply Air Temp Sch,      !- Name
     Temperature,                             !- Schedule Type Limits Name
     Through: 12/31,                          !- Field 1
@@ -226,9 +228,9 @@ namespace DB.Extensibility.Scripts
 
             string nodeListName = "ERV HR Outlets";
             string spmObjects = String.Format(spmBoilerPlate, nodeListName);
-			idfReader.Load(spmObjects);
+            idfReader.Load(spmObjects);
             List<string> outletNodes = FindNodes(idfReader, "HeatExchanger:AirToAir:SensibleAndLatent", "Supply Air Outlet Node Name");
-            
+
             IdfObject ervNodeList = FindObject(idfReader, "NodeList", nodeListName);
             ervNodeList.AddFields(outletNodes.ToArray());
 

@@ -32,7 +32,8 @@ namespace DB.Extensibility.Scripts
 
         private string GetDesuperheaterCoil(string name, string coolingCoilType, string coolingCoilName, IdfObject reheatCoil)
         {
-            string template = @"Coil:Heating:Desuperheater,
+            string template = @"
+Coil:Heating:Desuperheater,
   {0},              !- Coil Name
   {1},              !- Availability Schedule
   0.3,              !- Heat Reclaim Recovery Efficiency
@@ -43,12 +44,12 @@ namespace DB.Extensibility.Scripts
   {6},              !- Coil Temperature Setpoint Node Name
   0.1;              !- Parasitic Electric Load W";
             return string.Format(
-                template, 
-                name, 
-                reheatCoil["Availability Schedule Name"].Value, 
+                template,
+                name,
+                reheatCoil["Availability Schedule Name"].Value,
                 reheatCoil["Air Inlet Node Name"].Value,
-                reheatCoil["Air Outlet Node Name"].Value, 
-                coolingCoilType, 
+                reheatCoil["Air Outlet Node Name"].Value,
+                coolingCoilType,
                 coolingCoilName,
                 reheatCoil["Temperature Setpoint Node Name"].Value);
         }
@@ -70,7 +71,7 @@ namespace DB.Extensibility.Scripts
             }
 
             IdfObject reheatCoil = FindObject(reheatCoilType, reheatCoilName);
-            
+
             string desuperheaterName = unitaryName + " Desuperheater Coil";
             string desuperheater = GetDesuperheaterCoil(desuperheaterName, coolingCoilType, coolingCoilName, reheatCoil);
 

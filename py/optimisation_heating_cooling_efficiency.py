@@ -15,6 +15,7 @@ The range is defined via script 'Design Variable' with specific names:
 - 'CoolingCOP' (chiller reference COP)
 
 """
+
 import ctypes
 
 from eppy import modeleditor
@@ -45,8 +46,10 @@ def before_energy_simulation():
         if heating_eff != "UNKNOWN":
             boiler.Nominal_Thermal_Efficiency = heating_eff
         else:
-            show_message("ERROR",
-                         "Cannot set heating COP, unknown value in table OptimisationVariables")
+            show_message(
+                "ERROR",
+                "Cannot set heating COP, unknown value in table OptimisationVariables",
+            )
 
     chillers = idf_file.idfobjects["Chiller:Electric:EIR".upper()]
     cooling_cop_row = table.Records["CoolingCOP"]
@@ -59,7 +62,9 @@ def before_energy_simulation():
         if cooling_cop != "UNKNOWN":
             chiller.Reference_COP = cooling_cop
         else:
-            show_message("ERROR",
-                         "Cannot set cooling COP, unknown value in table OptimisationVariables")
+            show_message(
+                "ERROR",
+                "Cannot set cooling COP, unknown value in table OptimisationVariables",
+            )
 
     idf_file.save()

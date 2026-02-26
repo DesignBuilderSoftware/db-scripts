@@ -18,7 +18,8 @@ namespace DB.Extensibility.Scripts
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-        string dehumidifierBoilerplate = @"  Dehumidifier:Desiccant:NoFans,
+        string dehumidifierBoilerplate = @"
+Dehumidifier:Desiccant:NoFans,
     {0},                     !- Name
     {1},                     !- Availability Schedule Name
     {2},                     !- Process Air Inlet Node Name
@@ -38,7 +39,8 @@ namespace DB.Extensibility.Scripts
 
     OutdoorAir:Node, Outside Air Inlet Node 2;";
 
-        string dehumidifierFanBoilerplate = @"  Fan:VariableVolume,
+        string dehumidifierFanBoilerplate = @"
+Fan:VariableVolume,
     {0},                     !- Name
     {1},                     !- Availability Schedule Name
     0.7,                     !- Fan Total Efficiency
@@ -57,7 +59,8 @@ namespace DB.Extensibility.Scripts
     {2},                     !- Air Inlet Node Name
     Regen Fan Outlet Node;   !- Air Outlet Node Name";
 
-        string dehumidifierCoilBoilerplate = @"  Coil:Heating:Electric,
+        string dehumidifierCoilBoilerplate = @"
+Coil:Heating:Electric,
     {0},                     !- Name
     {1},                     !- Availability Schedule Name
     1.0,                     !- Efficiency
@@ -65,14 +68,16 @@ namespace DB.Extensibility.Scripts
     Regen Fan Outlet Node,   !- Air Inlet Node Name
     Desiccant Heating Coil Air Outlet Node;     !- Air Outlet Node Name";
 
-        string dehumidifierScheduleBoilerplate = @"  Schedule:Compact, {0},       ! Name
+        string dehumidifierScheduleBoilerplate = @"
+Schedule:Compact, {0},       ! Name
    Any Number,               ! Type
    Through: 12/31,           ! Type
    For: AllDays,             ! All days in year
    Until: 24:00,             ! All hours in day
    1;";
 
-        string dehumidifierSpmBoilerplate = @"  SetpointManager:MultiZone:Humidity:Maximum,
+        string dehumidifierSpmBoilerplate = @"  
+SetpointManager:MultiZone:Humidity:Maximum,
    Humidity Setpoint Manager,                           ! - Component name
    {0},                                                 ! - HVAC air loop name
    .005,                                                ! - Minimum setpoint humidity ratio (kg/kg)
@@ -124,7 +129,7 @@ namespace DB.Extensibility.Scripts
 
             // Define the regeneration inlet node, this can be either the air loop relief or outdoor air node
             string regenerationInletNode = hxObject["Exhaust Air Outlet Node Name"].Value;
-            
+
             // Load all desiccant dehumidifer related objects
             string scheduleName = airLoopName + " Desiccant unit schedule";
             string dehumidifierSchedule = String.Format(dehumidifierScheduleBoilerplate, scheduleName);
@@ -139,13 +144,13 @@ namespace DB.Extensibility.Scripts
 
             string dehumidifier = String.Format(
                 dehumidifierBoilerplate,
-                desiccantDehumidifierName, 
+                desiccantDehumidifierName,
                 scheduleName,
                 processInletNode,
                 processOutletNode,
                 dehumidifierCoilType,
-                regenerationInletNode, 
-                dehumidifierCoilName, 
+                regenerationInletNode,
+                dehumidifierCoilName,
                 dehumidiferFanName
                 );
 

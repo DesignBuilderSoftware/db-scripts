@@ -21,7 +21,7 @@ import ctypes
 import os
 
 from db_eplusout_reader import Variable, get_results
-from db_eplusout_reader.constants import *
+from db_eplusout_reader.constants import RP
 from db_eplusout_reader.exceptions import NoResults
 
 THRESHOLD_A = 3
