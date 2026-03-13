@@ -1,21 +1,32 @@
 /*
- Adds additional EnergyPlus output variables to the cooling
- simulation IDF. Actions performed by the script:
-    - Loads an Output:Variable for "People Latent Gain Rate" at Timestep
-        reporting frequency.
-    - Saves the modified IDF before the cooling simulation runs.
- Usage:
-    - Attach this script to run before the cooling simulation.
+Adds additional EnergyPlus output variables to the cooling simulation IDF
+
+This DesignBuilder C# script adds an EnergyPlus Output:Variable request to the cooling simulation IDF.
+
+Purpose
+- Open the EnergyPlus input IDF used for the cooling simulation with the BeforeCoolingSimulation() hookpoint
+- Insert an Output:Variable object requesting variables at a given frequency
+- Save the modified IDF so EnergyPlus uses the added output request during the cooling simulation
+
+How to Use
+
+Configuration
+
+- Add an Output:Variable definition in this order:
+    - Object Name: Output:Variable
+    - Key Value: The specific instance name (e.g., Zone Name, Component Name). Use "*" to request the variable for all applicable keys.
+    - Variable Name: The exact name of the EnergyPlus output requested, as found in the .rdd file (e.g., "People Latent Gain Rate").
+    - Reporting Frequency: the desired reporting interval supported by EnergyPlus ("Timestep", "Hourly", "Daily", "Monthly", "RunPeriod", "Annual")
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
-using System.Runtime;
-using System.Collections.Generic;
 using DB.Extensibility.Contracts;
 using EpNet;
 
 namespace DB.Extensibility.Scripts
 {
-    public class IdfFindAndReplace : ScriptBase, IScript
+    public class AddCoolingPeopleLatentGainOutput : ScriptBase, IScript
     {
         public override void BeforeCoolingSimulation()
         {
@@ -23,7 +34,12 @@ namespace DB.Extensibility.Scripts
                 ApiEnvironment.EnergyPlusInputIdfPath,
                 ApiEnvironment.EnergyPlusInputIddPath);
 
+            // ----------------------------
+            // USER CONFIGURATION SECTION
+            // ----------------------------
+            // Add Output:Variable requests
             idfReader.Load("Output:Variable, *, People Latent Gain Rate, Timestep;");
+
             idfReader.Save();
         }
     }

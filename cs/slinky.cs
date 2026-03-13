@@ -1,8 +1,36 @@
 /*
-Replace GroundHeatExchanger:Surface with GroundHeatExchanger:Slinky.
+Replace Ground Heat Exchanger of type Surface with Slinky type.
 
-Object name needs to reference the GroundHeatExchanger:Surface object name.
-Attributes can be set in 'boilerplate' IDF text below.
+Purpose
+This DesignBuilder C# script replaces a single GroundHeatExchanger:Surface object with a
+GroundHeatExchanger:Slinky object, keeping the same object name and reusing the original inlet/outlet nodes.
+
+Main steps
+1) Find the target GroundHeatExchanger:Surface by name
+2) Update references in:
+   - CondenserEquipmentList (object type + name pair)
+   - Branch (object type + name pair)
+3) Add:
+   - GroundHeatExchanger:Slinky (generated from the boilerplate template)
+   - Site:GroundTemperature:Undisturbed:KusudaAchenbach (boilerplate object)
+4) Remove the original GroundHeatExchanger:Surface
+5) Save the modified IDF
+
+How to Use
+
+Configuration
+- Set the target object name in: groundHxName
+  This must match the Name field of the GroundHeatExchanger:Surface in the model.
+- Adjust the Slinky parameters in: slinkyBoilerplateIdf
+  (e.g., design flow rate, soil properties, trench geometry, etc.)
+- Adjust / replace the undisturbed ground temperature object in: undisturbedGroundTempsIdf
+  Ensure the object name matches the reference used by the slinky boilerplate.
+
+Prerequisites (required placeholders)
+Base model must contain a GroundHeatExchanger:Surface object (referenced in groundHxName)
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script.
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Collections.Generic;
@@ -13,12 +41,17 @@ using System;
 using EpNet;
 
 namespace DB.Extensibility.Scripts
-
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-        string objectName = "Ground Heat Exchanger";
-        string slinkyBoilerPlate = @"
+        // USER CONFIGURATION:name of GroundHeatExchanger:Surface object (must exactly match the IDF object's Name).
+        private string groundHxName = "Ground Heat Exchanger";
+
+        // ----------------------------
+        // USER CONFIGURATION SECTION
+        // ----------------------------
+        // Boilerplate IDF template for the replacement GroundHeatExchanger:Slinky. Edit attribute values here as needed.
+        private string slinkyBoilerplateIdf = @"
 GroundHeatExchanger:Slinky,
   {0},              !- Name
   {1},              !- Inlet Node
@@ -43,7 +76,12 @@ GroundHeatExchanger:Slinky,
   KATemps,          !- Name of Undisturbed Ground Temperature Object
   10;               !- Maximum length of simulation [years]";
 
-        string ground = @"
+        // ----------------------------
+        // USER CONFIGURATION SECTION
+        // ----------------------------
+        // Boilerplate IDF for undisturbed ground temperature object referenced by the slinky HX above.
+        // Ensure the object name matches the reference used in slinkyBoilerplateIdf (e.g., "KATemps").
+        private string undisturbedGroundTempsIdf = @"
 Site:GroundTemperature:Undisturbed:KusudaAchenbach,
   KATemps,                 !- Name
   1.8,                     !- Soil Thermal Conductivity {W/m-K}
@@ -58,8 +96,15 @@ Site:GroundTemperature:Undisturbed:KusudaAchenbach,
             return idfReader[objectType].First(o => o[0] == objectName);
         }
 
-        private void ReplaceObjectTypeInList(IdfReader idfReader, string listName, string oldObjectType, string oldObjectName, string newObjectType, string newObjectName)
+        private void ReplaceObjectTypeInList(
+            IdfReader idfReader,
+            string listName,
+            string oldObjectType,
+            string oldObjectName,
+            string newObjectType,
+            string newObjectName)
         {
+            // Updates (Object Type, Object Name) pairs inside list-like objects.
             IEnumerable<IdfObject> allEquipment = idfReader[listName];
 
             bool objectFound = false;
@@ -95,26 +140,26 @@ Site:GroundTemperature:Undisturbed:KusudaAchenbach,
             string oldObjectType = "GroundHeatExchanger:Surface";
             string newObjectType = "GroundHeatExchanger:Slinky";
 
-            IdfObject groundHX = FindObject(idfReader, oldObjectType, objectName);
+            // Required placeholder object: GroundHeatExchanger:Surface with Name == groundHxName
+            IdfObject surfaceGroundHx = FindObject(idfReader, oldObjectType, groundHxName);
 
-            ReplaceObjectTypeInList(idfReader, "CondenserEquipmentList", oldObjectType, objectName, newObjectType, objectName);
-            ReplaceObjectTypeInList(idfReader, "Branch", oldObjectType, objectName, newObjectType, objectName);
+            // Update reference locations where the ground HX is referenced by (type, name).
+            ReplaceObjectTypeInList(idfReader, "CondenserEquipmentList", oldObjectType, groundHxName, newObjectType, groundHxName);
+            ReplaceObjectTypeInList(idfReader, "Branch", oldObjectType, groundHxName, newObjectType, groundHxName);
 
-            string inletNode = groundHX["Fluid Inlet Node Name"].Value;
-            string outletNode = groundHX["Fluid Outlet Node Name"].Value;
+            // Reuse inlet/outlet node names from the original surface HX so connectivity remains consistent.
+            string inletNode = surfaceGroundHx["Fluid Inlet Node Name"].Value;
+            string outletNode = surfaceGroundHx["Fluid Outlet Node Name"].Value;
 
-            string slinky = String.Format(slinkyBoilerPlate, objectName, inletNode, outletNode);
+            // Create the replacement slinky object using the boilerplate template.
+            string slinkyGroundHxIdf = String.Format(slinkyBoilerplateIdf, groundHxName, inletNode, outletNode);
 
-            idfReader.Remove(groundHX);
-            idfReader.Load(slinky);
-            idfReader.Load(ground);
+            // Replace objects in the IDF: remove old, add new + supporting ground temperature object.
+            idfReader.Remove(surfaceGroundHx);
+            idfReader.Load(slinkyGroundHxIdf);
+            idfReader.Load(undisturbedGroundTempsIdf);
 
             idfReader.Save();
         }
     }
 }
-
-
-
-
-
