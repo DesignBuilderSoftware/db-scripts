@@ -1,13 +1,38 @@
 /*
-Replace District Heating and District Cooling source plant components with ChillerHeater:Absorption:DirectFired object.
+Direct-Fired Absorption Chiller-Heater Replacement Script (District Heating/Cooling)
 
-ChillerHeater properties can be adjusted in the string boilerplate.
+This DesignBuilder C# script replaces DistrictHeating and DistrictCooling plant components with a ChillerHeater:Absorption:DirectFired object.
 
- */
+Purpose
 
-using System.Runtime;
+1) Replace references to DistrictHeating and DistrictCooling in Branch and PlantEquipmentList
+   so they point to ChillerHeater:Absorption:DirectFired with the specified chiller name
+2) Read node names from the DistrictHeating and DistrictCooling placeholder objects
+3) Insert a boilerplate ChillerHeater:Absorption:DirectFired object (plus required curves and OA node list)
+4) Remove the original DistrictHeating and DistrictCooling placeholder objects from the IDF
+5) Save the modified IDF
+
+How to Use
+
+Configuration (edit values in BeforeEnergySimulation)
+
+- chillerName: name assigned to the new ChillerHeater:Absorption:DirectFired object
+- districtHeatingName: placeholder DistrictHeating object name to be replaced
+- districtCoolingName: placeholder DistrictCooling object name to be replaced
+- hwLoopName / chwLoopName: currently not used by the script logic (kept as reference)
+
+ChillerHeater properties (edit boilerplate in GetChillerHeaterIdfObjects)
+- Adjust performance ratios, temperatures, curves, and any autosizing fields inside the IDF template string.
+
+Prerequisites (required placeholder objects)
+The base model must contain:
+- A DistrictHeating object named exactly as districtHeatingName (default: "District Heating")
+- A DistrictCooling object named exactly as districtCoolingName (default: "District Cooling")
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+*/
+
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using DB.Extensibility.Contracts;
 using EpNet;
@@ -16,17 +41,21 @@ namespace DB.Extensibility.Scripts
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-        private IdfReader Reader;
+        private IdfReader idfReader;
 
         public override void BeforeEnergySimulation()
         {
-            Reader = new IdfReader(
+            idfReader = new IdfReader(
                 ApiEnvironment.EnergyPlusInputIdfPath,
                 ApiEnvironment.EnergyPlusInputIddPath);
 
+            // ----------------------------
+            // USER CONFIGURATION SECTION
+            // ----------------------------
+            // Ensure these names match objects in the model/IDF
             const string chillerName = "Big Chiller";
-            const string hwLoopName = "HW Loop";
-            const string chwLoopName = "CHW Loop";
+            const string hwLoopName = "HW Loop";     // Not used in current logic
+            const string chwLoopName = "CHW Loop";   // Not used in current logic
             const string districtHeatingName = "District Heating";
             const string districtCoolingName = "District Cooling";
 
@@ -37,7 +66,7 @@ namespace DB.Extensibility.Scripts
                 districtHeatingName,
                 districtCoolingName);
 
-            Reader.Save();
+            idfReader.Save();
         }
 
         public void ApplyDirectFiredChiller(
@@ -51,18 +80,14 @@ namespace DB.Extensibility.Scripts
             const string heatingPlaceholderObjectType = "DistrictHeating";
             const string coolingPlaceholderObjectType = "DistrictCooling";
 
-            // update placeholder list and branch references
-            ReplaceObjectTypeInList("Branch", heatingPlaceholderObjectType, districtHeatingName, chillerType,
-                chillerName);
-            ReplaceObjectTypeInList("PlantEquipmentList", heatingPlaceholderObjectType, districtHeatingName,
-                chillerType, chillerName);
+            // Replace all Branch and PlantEquipmentList references so the plant now points to the new chiller-heater.
+            ReplaceObjectTypeInList("Branch", heatingPlaceholderObjectType, districtHeatingName, chillerType, chillerName);
+            ReplaceObjectTypeInList("PlantEquipmentList", heatingPlaceholderObjectType, districtHeatingName, chillerType, chillerName);
 
-            ReplaceObjectTypeInList("Branch", coolingPlaceholderObjectType, districtCoolingName, chillerType,
-                chillerName);
-            ReplaceObjectTypeInList("PlantEquipmentList", coolingPlaceholderObjectType, districtCoolingName,
-                chillerType, chillerName);
+            ReplaceObjectTypeInList("Branch", coolingPlaceholderObjectType, districtCoolingName, chillerType, chillerName);
+            ReplaceObjectTypeInList("PlantEquipmentList", coolingPlaceholderObjectType, districtCoolingName, chillerType, chillerName);
 
-            // modify nodes
+            // Read the hot and chilled water nodes from the DistrictHeating and DistrictCooling placeholders, respectively.
             IdfObject districtHeating = FindObject(heatingPlaceholderObjectType, districtHeatingName);
             string hwInletNode = districtHeating["Hot Water Inlet Node Name"].Value;
             string hwOutletNode = districtHeating["Hot Water Outlet Node Name"].Value;
@@ -71,20 +96,30 @@ namespace DB.Extensibility.Scripts
             string chwInletNode = districtCooling["Chilled Water Inlet Node Name"].Value;
             string chwOutletNode = districtCooling["Chilled Water Outlet Node Name"].Value;
 
-            string chillerHeater = GetChillerHeaterIdfObjects(chillerName, hwInletNode, hwOutletNode, chwInletNode, chwOutletNode);
-            Reader.Load(chillerHeater);
+            // Inject the new ChillerHeater:Absorption:DirectFired object (plus curves and OA node list).
+            string chillerHeaterIdf = GetChillerHeaterIdfObjects(chillerName, hwInletNode, hwOutletNode, chwInletNode, chwOutletNode);
+            idfReader.Load(chillerHeaterIdf);
 
-            Reader.Remove(districtHeating);
-            Reader.Remove(districtCooling);
+            // Remove the placeholders after the new object has been created and referenced.
+            idfReader.Remove(districtHeating);
+            idfReader.Remove(districtCooling);
         }
 
-        public string GetChillerHeaterIdfObjects(string chillerName, string hwInletNode,
-            string hwOutletNode, string chwInletNode, string chwOutletNode)
+        public string GetChillerHeaterIdfObjects(
+            string chillerName,
+            string hwInletNode,
+            string hwOutletNode,
+            string chwInletNode,
+            string chwOutletNode)
         {
-            string template = @"
+            // ----------------------------
+            // USER CONFIGURATION SECTION
+            // ----------------------------
+            // Boilerplate IDF objects inserted into the model (ChillerHeater:Absorption:DirectFired, OutdoorAir:Nodelist, Performance curves)
+            string chillerHeaterTemplate = @"
 ChillerHeater:Absorption:DirectFired,
     {0},                      !- Name
-    Autosize,                  !- Nominal Cooling Capacity W
+    Autosize,                 !- Nominal Cooling Capacity W
     0.8,                      !- Heating to Cooling Capacity Ratio
     0.97,                     !- Fuel Input to Cooling Output Ratio
     1.25,                     !- Fuel Input to Heating Output Ratio
@@ -118,48 +153,53 @@ ChillerHeater:Absorption:DirectFired,
     NaturalGas,               !- Fuel Type
     ;                         !- Sizing Factor
 
-
- OutdoorAir:Nodelist, {0} Chiller OA Node;   ! - Outside air node
+OutdoorAir:Nodelist,
+    {0} Chiller OA Node;      !- Outside air node
 
 Curve:Biquadratic,
     {0} GasAbsFlatBiQuad,     !- Name
-    1.000000000,              !- Coefficient1 Constant
-    0.000000000,              !- Coefficient2 x
-    0.000000000,              !- Coefficient3 x**2
-    0.000000000,              !- Coefficient4 y
-    0.000000000,              !- Coefficient5 y**2
-    0.000000000,              !- Coefficient6 x*y
-    0.,                       !- Minimum Value of x
-    50.,                      !- Maximum Value of x
-    0.,                       !- Minimum Value of y
-    50.;                      !- Maximum Value of y
+    1.000000000,             !- Coefficient1 Constant
+    0.000000000,             !- Coefficient2 x
+    0.000000000,             !- Coefficient3 x**2
+    0.000000000,             !- Coefficient4 y
+    0.000000000,             !- Coefficient5 y**2
+    0.000000000,             !- Coefficient6 x*y
+    0.,                      !- Minimum Value of x
+    50.,                     !- Maximum Value of x
+    0.,                      !- Minimum Value of y
+    50.;                     !- Maximum Value of y
 
 Curve:Quadratic,
     {0} GasAbsFlatQuad,       !- Name
-    1.000000000,              !- Coefficient1 Constant
-    0.000000000,              !- Coefficient2 x
-    0.000000000,              !- Coefficient3 x**2
-    0.,                       !- Minimum Value of x
-    50.;                      !- Maximum Value of x
+    1.000000000,             !- Coefficient1 Constant
+    0.000000000,             !- Coefficient2 x
+    0.000000000,             !- Coefficient3 x**2
+    0.,                      !- Minimum Value of x
+    50.;                     !- Maximum Value of x
 
 Curve:Quadratic,
     {0} GasAbsLinearQuad,     !- Name
-    0.000000000,              !- Coefficient1 Constant
-    1.000000000,              !- Coefficient2 x
-    0.000000000,              !- Coefficient3 x**2
-    0.,                       !- Minimum Value of x
-    50.;                      !- Maximum Value of x
+    0.000000000,             !- Coefficient1 Constant
+    1.000000000,             !- Coefficient2 x
+    0.000000000,             !- Coefficient3 x**2
+    0.,                      !- Minimum Value of x
+    50.;                     !- Maximum Value of x
 
 Curve:Quadratic,
     {0} GasAbsInvLinearQuad,  !- Name
-    1.000000000,              !- Coefficient1 Constant
-    -1.000000000,             !- Coefficient2 x
-    0.000000000,              !- Coefficient3 x**2
-    0.,                       !- Minimum Value of x
-    50.;                      !- Maximum Value of x
-
+    1.000000000,             !- Coefficient1 Constant
+    -1.000000000,            !- Coefficient2 x
+    0.000000000,             !- Coefficient3 x**2
+    0.,                      !- Minimum Value of x
+    50.;                     !- Maximum Value of x
 ";
-            return String.Format(template, chillerName, hwInletNode, hwOutletNode, chwInletNode,
+
+            return string.Format(
+                chillerHeaterTemplate,
+                chillerName,
+                hwInletNode,
+                hwOutletNode,
+                chwInletNode,
                 chwOutletNode);
         }
 
@@ -167,38 +207,44 @@ Curve:Quadratic,
         {
             try
             {
-                return Reader[objectType].First(c => c[0] == objectName);
+                return idfReader[objectType].First(c => c[0] == objectName);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw new MissingFieldException(String.Format("Cannot find object: {0}, type: {1}", objectName,
-                    objectType));
+                throw new MissingFieldException(string.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
             }
         }
 
-        private void ReplaceObjectTypeInList(string listName, string oldObjectType, string oldObjectName,
-            string newObjectType, string newObjectName)
+        private void ReplaceObjectTypeInList(
+            string listName,
+            string oldObjectType,
+            string oldObjectName,
+            string newObjectType,
+            string newObjectName)
         {
-            IEnumerable<IdfObject> allEquipment = Reader[listName];
+            var idfObjects = idfReader[listName];
 
-            bool objectFound = false;
+            bool replacementMade = false;
 
-            foreach (IdfObject equipment in allEquipment)
+            foreach (IdfObject idfObject in idfObjects)
             {
-                if (!objectFound)
+                if (replacementMade)
                 {
-                    for (int i = 0; i < (equipment.Count - 1); i++)
-                    {
-                        Field field = equipment[i];
-                        Field nextField = equipment[i + 1];
+                    break;
+                }
 
-                        if (field.Value == oldObjectType && nextField.Value == oldObjectName)
-                        {
-                            field.Value = newObjectType;
-                            nextField.Value = newObjectName;
-                            objectFound = true;
-                            break;
-                        }
+                for (int i = 0; i < (idfObject.Count - 1); i++)
+                {
+                    Field currentField = idfObject[i];
+                    Field nextField = idfObject[i + 1];
+
+                    // Note: comparison is case-sensitive here.
+                    if (currentField.Value == oldObjectType && nextField.Value == oldObjectName)
+                    {
+                        currentField.Value = newObjectType;
+                        nextField.Value = newObjectName;
+                        replacementMade = true;
+                        break;
                     }
                 }
             }

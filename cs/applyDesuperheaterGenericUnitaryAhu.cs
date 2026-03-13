@@ -1,102 +1,150 @@
 /*
-Apply desuperheater coil to Unitary Generic AHU systems.
+Apply Desuperheater Coil to Generic Unitary System Objects
 
-The update is applied to all Unitary Generic AHU systems with desuperheater substring in their name.
-The unit must include the CoolReheat humidity control. 
+This DesignBuilder C# script runs before the EnergyPlus simulation and modifies the IDF to replace a unitary
+system’s supplemental (reheat) heating coil with a Coil:Heating:Desuperheater for eligible systems.
+
+Purpose
+1) Find all AirLoopHVAC:UnitarySystem objects whose Name contains a configurable substring (default: "desuperheater").
+2) For each match:
+   - Read the unitary system’s Supplemental Heating Coil and Cooling Coil references
+   - Build a new Coil:Heating:Desuperheater object using the reheat coil nodes/schedule and the cooling coil as heat source
+   - Update the unitary system to reference the new desuperheater coil
+   - Insert the new desuperheater coil object into the IDF
+   - Remove the original reheat coil object from the IDF
+
+How to Use
+
+Configuration
+- Name your target AirLoopHVAC:UnitarySystem objects so their Name contains the trigger substring.
+  Default trigger substring is: "desuperheater" (case-insensitive).
+- Define desuperheater coil efficiency (see desuperheaterCoilIdfTemplate).
+- Availability schedule, temperature setpoint, and node connections are taken from the existing reheat coil (placeholder).
+
+Prerequisites (required placeholders)
+
+- Eligible AirLoopHVAC:UnitarySystem objects must have the trigger substring ("desuperheater") in the name
+- The unit must include CoolReheat humidity control so that a supplemental (reheat) coil is present and referenced.
+    This setting can be controled in 'Unitary System settings > Control > Dehumidification control type' in DB model.
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
-using System.Collections.Generic;
-using System.Linq;
 using System;
+using System.Linq;
 using System.Windows.Forms;
 using DB.Extensibility.Contracts;
 using EpNet;
 
 namespace DB.Extensibility.Scripts
 {
-    public class IdfFindAndReplace : ScriptBase, IScript
+    public class ApplyDesuperheaterToUnitarySystems : ScriptBase, IScript
     {
-        private IdfReader Reader;
+        private IdfReader idfReader;
 
-        public IdfObject FindObject(string objectType, string objectName)
+        private IdfObject FindIdfObject(string objectType, string objectName)
         {
             try
             {
-                return Reader[objectType].First(c => c[0] == objectName);
+                return idfReader[objectType].First(o => o[0] == objectName);
             }
-            catch (Exception e)
+            catch
             {
-                throw new MissingFieldException(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
+                throw new MissingFieldException(
+                    string.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
             }
         }
 
-        private string GetDesuperheaterCoil(string name, string coolingCoilType, string coolingCoilName, IdfObject reheatCoil)
+        // Generates the IDF text for a Coil:Heating:Desuperheater object.
+        // Availability schedule, temperature setpoint, and node connections are taken from the existing reheat coil (placeholder).
+        private string BuildDesuperheaterCoilIdf(
+            string desuperheaterCoilName,
+            string coolingCoilObjectType,
+            string coolingCoilObjectName,
+            IdfObject existingReheatCoil)
         {
-            string template = @"
+            // USER CONFIGURATION: Define the efficiency of the Desuperheater (default is set to 0.3)
+            string desuperheaterCoilIdfTemplate = @"
 Coil:Heating:Desuperheater,
   {0},              !- Coil Name
   {1},              !- Availability Schedule
-  0.3,              !- Heat Reclaim Recovery Efficiency
   {2},              !- Coil Air Inlet Node Name
   {3},              !- Coil Air Outlet Node Name
   {4},              !- Heating Source Type
   {5},              !- Heating Source Name
   {6},              !- Coil Temperature Setpoint Node Name
   0.1;              !- Parasitic Electric Load W";
+
             return string.Format(
-                template,
-                name,
-                reheatCoil["Availability Schedule Name"].Value,
-                reheatCoil["Air Inlet Node Name"].Value,
-                reheatCoil["Air Outlet Node Name"].Value,
-                coolingCoilType,
-                coolingCoilName,
-                reheatCoil["Temperature Setpoint Node Name"].Value);
+                desuperheaterCoilIdfTemplate,
+                desuperheaterCoilName,
+                existingReheatCoil["Availability Schedule Name"].Value,
+                existingReheatCoil["Air Inlet Node Name"].Value,
+                existingReheatCoil["Air Outlet Node Name"].Value,
+                coolingCoilObjectType,
+                coolingCoilObjectName,
+                existingReheatCoil["Temperature Setpoint Node Name"].Value);
         }
 
-        private void AddDesuperheaterToUnitary(IdfObject unitary)
+        // Replaces the unitary system's "Supplemental Heating Coil" reference with a new desuperheater coil
+        private void ApplyDesuperheaterToUnitarySystem(IdfObject unitarySystem)
         {
-            string unitaryName = unitary["Name"].Value;
+            string unitarySystemName = unitarySystem["Name"].Value;
 
-            string reheatCoilType = unitary["Supplemental Heating Coil Object Type"].Value;
-            string reheatCoilName = unitary["Supplemental Heating Coil Name"].Value;
-            string coolingCoilType = unitary["Cooling Coil Object Type"].Value;
-            string coolingCoilName = unitary["Cooling Coil Name"].Value;
+            string reheatCoilObjectType = unitarySystem["Supplemental Heating Coil Object Type"].Value;
+            string reheatCoilObjectName = unitarySystem["Supplemental Heating Coil Name"].Value;
 
-            if (string.IsNullOrEmpty(reheatCoilType))
+            string coolingCoilObjectType = unitarySystem["Cooling Coil Object Type"].Value;
+            string coolingCoilObjectName = unitarySystem["Cooling Coil Name"].Value;
+
+            if (string.IsNullOrEmpty(reheatCoilObjectType))
             {
-                MessageBox.Show("Skipping unit: " + unitaryName + ", reheat coil is not included." +
-                                "\nMake sure that the unit uses CoolReheat humidity control.");
+                MessageBox.Show(
+                    "Skipping unit: " + unitarySystemName +
+                    "\nSupplemental (reheat) coil is not included." +
+                    "\nMake sure that the unit uses CoolReheat humidity control.");
                 return;
             }
 
-            IdfObject reheatCoil = FindObject(reheatCoilType, reheatCoilName);
+            // Placeholder reheat coil object is used to copy schedule + node connections
+            IdfObject existingReheatCoil = FindIdfObject(reheatCoilObjectType, reheatCoilObjectName);
 
-            string desuperheaterName = unitaryName + " Desuperheater Coil";
-            string desuperheater = GetDesuperheaterCoil(desuperheaterName, coolingCoilType, coolingCoilName, reheatCoil);
+            string desuperheaterCoilName = unitarySystemName + " Desuperheater Coil";
+            string desuperheaterCoilIdf = BuildDesuperheaterCoilIdf(
+                desuperheaterCoilName,
+                coolingCoilObjectType,
+                coolingCoilObjectName,
+                existingReheatCoil);
 
-            unitary["Supplemental Heating Coil Object Type"].Value = "Coil:Heating:Desuperheater";
-            unitary["Supplemental Heating Coil Name"].Value = desuperheaterName;
+            // Update unitary system to reference the new desuperheater coil as the supplemental heating coil
+            unitarySystem["Supplemental Heating Coil Object Type"].Value = "Coil:Heating:Desuperheater";
+            unitarySystem["Supplemental Heating Coil Name"].Value = desuperheaterCoilName;
 
-            Reader.Load(desuperheater);
-            Reader.Remove(reheatCoil);
+            idfReader.Load(desuperheaterCoilIdf);
+            idfReader.Remove(existingReheatCoil);
         }
 
         public override void BeforeEnergySimulation()
         {
-            Reader = new IdfReader(
+            idfReader = new IdfReader(
                 ApiEnvironment.EnergyPlusInputIdfPath,
                 ApiEnvironment.EnergyPlusInputIddPath);
 
-            foreach (IdfObject unitary in Reader["AirLoopHVAC:UnitarySystem"])
+            // Configuration: select unitary systems by substring match in Name (case-insensitive).
+            const string nameFilterSubstring = "desuperheater";
+
+            foreach (IdfObject unitarySystem in idfReader["AirLoopHVAC:UnitarySystem"])
             {
-                string name = unitary[0].Value;
-                if (name.ToLower().Contains("desuperheater"))
+                string unitarySystemName = unitarySystem[0].Value;
+
+                // Only apply to systems whose name contains the configured substring.
+                if (unitarySystemName.IndexOf(nameFilterSubstring, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    AddDesuperheaterToUnitary(unitary);
+                    ApplyDesuperheaterToUnitarySystem(unitarySystem);
                 }
             }
-            Reader.Save();
+
+            idfReader.Save();
         }
     }
 }
