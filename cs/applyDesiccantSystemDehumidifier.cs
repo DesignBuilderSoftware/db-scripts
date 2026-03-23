@@ -1,10 +1,11 @@
 /*
 Add Desiccant Dehumidifier (type System) to an AirLoopHVAC main branch.
 
+Purpose:
 This DesignBuilder C# script inserts a Dehumidifier:Desiccant:System downstream of a DX cooling coil (Coilsystem:Cooling:DX) in an AHU main branch. 
 It also loads the supporting heat exchanger, fan, curves, outdoor air nodes, schedule, and humidity setpoint manager objects.
 
-Purpose
+Main Steps:
 1) Find the target branch based on AHU name.
 2) Locate the CoilSystem:Cooling:DX on that branch and resolve the referenced cooling coil object.
 3) Re-wire nodes so the dehumidifier sits downstream of the DX coil system on the branch:
@@ -13,19 +14,19 @@ Purpose
 4) Load the required boilerplate IDF text blocks (dehumidifier, HX, fan, curves, schedule, OA nodes, setpoint manager)
    and load the HX performance data.
 
-How to Use
+How to Use:
 
 Configuration
 Defined in the AddDesiccantDehumidifierToAirLoop():
 - airLoopName: Must match the model's IDF naming.
 
-Prerequisites (required placeholders)
-
+Prerequisites / Placeholders
 This script expects an Air Loop to be in place in the model defined in AddDesiccantDehumidifierToAirLoop().
 The component is meant to be used in conjunction with a DX cooling coil.
 The script looks up a DX coil coil and places the dehumidifer downstream of the coil.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

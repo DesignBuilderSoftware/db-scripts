@@ -1,12 +1,11 @@
 /*
 Add Dehumidifier:Desiccant:NoFans to an AirLoopHVAC outdoor air system (OA System).
 
-Purpose
+Purpose:
 This DesignBuilder C# script inserts a desiccant dehumidifier component into an existing AirLoopHVAC outdoor air system.
 The dehumidifier is inserted immediately upstream of an air-to-air heat exchanger in the AirLoopHVAC:OutdoorAirSystem:EquipmentList.
 
-Main Steps
-
+Main Steps:
 1) Locate the target AirLoopHVAC:OutdoorAirSystem:EquipmentList for a given air loop name
 2) Identify the heat exchanger and the the equipment object immediately upstream
 3) Insert Dehumidifier:Desiccant:NoFans into the equipment list before the heat exchanger
@@ -17,19 +16,18 @@ Main Steps
   - Coil:Heating:Electric (regeneration heater)
   - SetpointManager:MultiZone:Humidity:Maximum (humidity setpoint control)
 
-How to Use
+How to Use:
 
 Configuration
-
 Defined in the AddDesiccantDehumidifierToOaSystem():
 - airLoopName: Must match the model's IDF naming.
 - heatExchangerEquipmentFieldIndex: The field index where the heat exchanger object type appears in the equipment list
 
-Prerequisites (required placeholders)
-
+Prerequisites / Placeholders
 This script expects an Air Loop of type AirLoopHVAC:OutdoorAirSystem:EquipmentList to be in place in the model.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

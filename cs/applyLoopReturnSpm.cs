@@ -1,10 +1,11 @@
 /*
 Apply Loop Return Setpoint Manager Script (Plant Loops)
 
+Purpose:
 This DesignBuilder C# script replaces loop supply-side SetpointManager:Scheduled objects (with specific name keys) 
 by creating the equivalent SetpointManager:ReturnTemperature:* object for plant loops.
 
-Purpose
+Main Steps:
 1) Identify SetpointManager:Scheduled objects whose name contains:
   - "CHW Return"  -> create SetpointManager:ReturnTemperature:ChilledWater
   - "HW Return"   -> create SetpointManager:ReturnTemperature:HotWater
@@ -15,7 +16,7 @@ Purpose
   - Create and load the appropriate ReturnTemperature setpoint manager object into the IDF
   - (Side-effect) Update NodeList to point to the inferred inlet node (see notes in code)
 
-How to Use
+How to Use:
 
 Configuration
 - Matching keys are controlled by the constants:
@@ -27,12 +28,12 @@ Configuration
   - HW : 57°C min, 60°C max
   Adjust these values in the templates if needed.
 
-Prerequisites (required placeholders)
-
+Prerequisites / Placeholders
 - The base model must include SetpointManager:Scheduled objects used as placeholders,
   with Names containing either "CHW Return" or "HW Return".
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

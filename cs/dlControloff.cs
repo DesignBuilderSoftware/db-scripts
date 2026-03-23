@@ -1,10 +1,11 @@
 /*
 Daylighting Controls Sizing Override (Disable Daylighting on Cooling Design Days)
 
-Purpose
+Purpose:
 This DesignBuilder C# script disables daylighting controls for sizing-related calculations by
 overriding the Availability Schedule referenced by all Daylighting:Controls objects.
 
+Main Steps:
 1) Find all Daylighting:Controls objects
 2) Force their "Availability Schedule Name" to a custom schedule (default: "OnSddOff")
 3) Inject a Schedule:Compact object named "OnSddOff" that:
@@ -12,20 +13,16 @@ overriding the Availability Schedule referenced by all Daylighting:Controls obje
   - Sets availability to 1 for all other days (daylighting enabled for normal simulation periods)
 4) Save the modified IDF back to disk before EnergyPlus runs
 
-How to Use
-- Add this script to your DesignBuilder model as a C# extensibility script.
-- The script runs in these hooks:
-  - BeforeEnergySimulation()
-  - BeforeCoolingSimulation()
-  This ensures the IDF is updated before the relevant simulation phases that may include sizing.
+How to Use:
 
 Configuration
 - Schedule name: "OnSddOff"
 
-Prerequisites
-- The model/IDF must contain one or more Daylighting:Controls objects.
+Prerequisites / Placeholders
+- The model must contain one or more Daylighting:Controls objects.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Collections.Generic;

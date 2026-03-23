@@ -1,18 +1,18 @@
 /*
 Heat Exchanger Conversion Script (Sensible+Latent to Flat Plate)
 
+Purpose:
 This DesignBuilder C# script replaces specified EnergyPlus HeatExchanger:AirToAir:SensibleAndLatent objects
 with HeatExchanger:AirToAir:FlatPlate objects, while keeping the same object Name.
 
-Purpose
-
+Main Steps:
 1) Locate each target HeatExchanger:AirToAir:SensibleAndLatent object by name
 2) Update AirLoopHVAC:OutdoorAirSystem:EquipmentList references for the HeatExchanger:AirToAir:* from SensibleAndLatent to FlatPlate
 3) Create a new HeatExchanger:AirToAir:FlatPlate object using a boilerplate IDF template
      (with key attributes copied from the original HX)
 4) Remove the original HX object and loading the new FlatPlate object into the IDF
 
-How to Use
+How to Use:
 
 Configuration
 - targetHeatExchangerNames:
@@ -21,14 +21,15 @@ Configuration
     IDF text template for HeatExchanger:AirToAir:FlatPlate. 
     Placeholders {0}..{8} are populated from the original HX object fields via the user interface.
 
-Prerequisites (required placeholders)
+Prerequisites / Placeholders
 
 Base model must contain, for each target name:
-    - A HeatExchanger:AirToAir:SensibleAndLatent object with that exact Name
-    - The original HX object must have values for fields read by this script:
-     Availability Schedule Name, Economizer Lockout, Nominal Supply Air Flow Rate, Nominal Electric Power, and the four node names.
+- A HeatExchanger:AirToAir:SensibleAndLatent object with that exact Name
+- The original HX object must have values for fields read by this script:
+  Availability Schedule Name, Economizer Lockout, Nominal Supply Air Flow Rate, Nominal Electric Power, and the four node names.
 
-   DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Collections.Generic;

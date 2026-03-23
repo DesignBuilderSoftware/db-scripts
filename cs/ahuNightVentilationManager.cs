@@ -1,30 +1,28 @@
 /*
 Night Ventilation Availability Manager Assignment Script
 
+Purpose:
 This DesignBuilder C# script adds an EnergyPlus AvailabilityManager:NightVentilation controller to one or more specified air loops.
 
-Purpose
+Main Steps:
+1) Locate each target air loop’s supply fan (via the air loop main Branch object)
+2) Extract the fan Availability Schedule Name
+3) Create an AvailabilityManager:NightVentilation object using that fan schedule and a user-specified control zone
+4) Assignthe new AvailabilityManager to the air loop’s AvailabilityManagerAssignmentList
+5) Add shared schedules used by the night ventilation manager (Applicability + Setpoint)
 
-The script executes before the EnergyPlus simulation starts and modifies the IDF by:
-   - Locating each target air loop’s supply fan (via the air loop main Branch object)
-   - Extracting the fan Availability Schedule Name
-   - Creating an AvailabilityManager:NightVentilation object using that fan schedule and a user-specified control zone
-   - Assigning the new AvailabilityManager to the air loop’s AvailabilityManagerAssignmentList
-   - Adding shared schedules used by the night ventilation manager (Applicability + Setpoint)
-
-How to Use
+How to Use:
 
 Configuration
-
 - Target selection: air loops are selected by the dictionary keys in loopControlZonePairs.
 - Control zone: set per air loop using the dictionary values.
 
-Prerequisites (Required Placeholder Objects / Naming Assumptions)
-
+Prerequisites / Placeholders
 - One or more Air Loops must be included in the base model.
 - The air lopps must have supply fans which support the night ventilation control (Fan:VariableVolume, Fan:ConstantVolume, Fan:OnOff)
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

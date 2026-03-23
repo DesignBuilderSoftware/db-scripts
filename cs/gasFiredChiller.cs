@@ -1,10 +1,10 @@
 /*
 Direct-Fired Absorption Chiller-Heater Replacement Script (District Heating/Cooling)
 
+Purpose
 This DesignBuilder C# script replaces DistrictHeating and DistrictCooling plant components with a ChillerHeater:Absorption:DirectFired object.
 
-Purpose
-
+Main Steps:
 1) Replace references to DistrictHeating and DistrictCooling in Branch and PlantEquipmentList
    so they point to ChillerHeater:Absorption:DirectFired with the specified chiller name
 2) Read node names from the DistrictHeating and DistrictCooling placeholder objects
@@ -12,7 +12,7 @@ Purpose
 4) Remove the original DistrictHeating and DistrictCooling placeholder objects from the IDF
 5) Save the modified IDF
 
-How to Use
+How to Use:
 
 Configuration (edit values in BeforeEnergySimulation)
 
@@ -24,12 +24,13 @@ Configuration (edit values in BeforeEnergySimulation)
 ChillerHeater properties (edit boilerplate in GetChillerHeaterIdfObjects)
 - Adjust performance ratios, temperatures, curves, and any autosizing fields inside the IDF template string.
 
-Prerequisites (required placeholder objects)
+Prerequisites / Placeholders
 The base model must contain:
 - A DistrictHeating object named exactly as districtHeatingName (default: "District Heating")
 - A DistrictCooling object named exactly as districtCoolingName (default: "District Cooling")
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

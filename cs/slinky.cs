@@ -1,11 +1,11 @@
 /*
 Replace Ground Heat Exchanger of type Surface with Slinky type.
 
-Purpose
+Purpose:
 This DesignBuilder C# script replaces a single GroundHeatExchanger:Surface object with a
 GroundHeatExchanger:Slinky object, keeping the same object name and reusing the original inlet/outlet nodes.
 
-Main steps
+Main steps:
 1) Find the target GroundHeatExchanger:Surface by name
 2) Update references in:
    - CondenserEquipmentList (object type + name pair)
@@ -16,7 +16,7 @@ Main steps
 4) Remove the original GroundHeatExchanger:Surface
 5) Save the modified IDF
 
-How to Use
+How to Use:
 
 Configuration
 - Set the target object name in: groundHxName
@@ -26,7 +26,7 @@ Configuration
 - Adjust / replace the undisturbed ground temperature object in: undisturbedGroundTempsIdf
   Ensure the object name matches the reference used by the slinky boilerplate.
 
-Prerequisites (required placeholders)
+Prerequisites / Placeholders
 Base model must contain a GroundHeatExchanger:Surface object (referenced in groundHxName)
 
 DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script.

@@ -1,10 +1,11 @@
 /*
 Reads optimisation variables from the "OptimisationVariables" table
 
+Purpose:
 This DesignBuilder C# script reads optimisation variables from the DesignBuilder site table named "OptimisationVariables"
 and applies them to the EnergyPlus input IDF just before simulation starts.
 
-Purpose
+Main Steps:
 1) Read "heatingCOP" and "coolingEER" records from the "OptimisationVariables" table (field: "VariableCurrentValue").
 2) Open the generated EnergyPlus IDF using EpNet.
 3) If a variable value is "UNKNOWN", a MessageBox is shown and that value is not applied.
@@ -13,7 +14,7 @@ Purpose
    - Chiller:Electric:EIR (all instances) (Field = "Reference COP")
 5) Save the IDF after modifications.
 
-How to Use
+How to Use:
 
 Configuration
 - Required record keys:
@@ -22,13 +23,14 @@ Configuration
 - Default object name targeted for heating COP update:
   - "HP Water Heater HP Water Heating Coil" 
 
-Prerequisites (required placeholders)
+Prerequisites / Placeholders
 - DesignBuilder Site table "OptimisationVariables" expects keys "heatingCOP" and "coolingEER".
 - The EnergyPlus model must contain:
   - Coil:WaterHeating:AirToWaterHeatPump:Pumped object with Name exactly:"HP Water Heater HP Water Heating Coil" (default key)
   - One or more Chiller:Electric:EIR objects (all will be updated)
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Collections.Generic;

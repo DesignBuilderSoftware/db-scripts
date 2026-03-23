@@ -1,38 +1,38 @@
 /*
 Unglazed Transpired Solar Collector (UTSC) Integration Script
 
+Purpose:
 This DesignBuilder C# script adds a SolarCollector:UnglazedTranspired object to the EnergyPlus input file.
 It integrates the solar collector into specified air handling units (AHUs) by updating the outdoor air system equipment list and building surface boundary conditions.
 Output variables are automatically configured for solar collector performance reporting.
 
-How to Use /  Workflow (BeforeEnergySimulation)
-
-1. Initializes the IDF reader with EnergyPlus input and data dictionary files.
-2. Adds a free heating setpoint schedule (user can specify schedule name and setpoint value).
-3. Creates a SolarCollectorProperties object with user-defined parameters:
+Main Steps:
+1) Add a free heating setpoint schedule (user can specify schedule name and setpoint value).
+2) Create a SolarCollectorProperties object with user-defined parameters:
    - Collector name
    - Availability schedule name
    - Free heating setpoint schedule name
    - List of building surface names
    - (Optional physical properties can be customized)
-4. Defines air loop to control zone mappings via AirloopControlZone array (user specifies air loop and zone names).
-5. Integrates the solar collector into each air loop:
+3) Define air loop to control zone mappings via AirloopControlZone array (user specifies air loop and zone names).
+4) Integrate the solar collector into each air loop:
    - Updates the outdoor air system equipment list to include the collector.
    - Updates building surface boundary conditions to reference the collector's conditions model.
-6. Adds output variables for solar collector performance reporting.
-7. Saves all changes to the EnergyPlus input file.
+5) Add output variables for solar collector performance reporting.
+6) Save all changes to the EnergyPlus input file.
 
+How to Use:
 
-Prerequisites (expected User Inputs)
+Configuration
+- Solar collector name
+- Availability schedule name
+- Free heating setpoint schedule name
+- List of building surface names
+- Air loop and control zone names
+- (Optional) Physical properties for the collector
 
-    - Solar collector name
-    - Availability schedule name
-    - Free heating setpoint schedule name
-    - List of building surface names
-    - Air loop and control zone names
-    - (Optional) Physical properties for the collector
-
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

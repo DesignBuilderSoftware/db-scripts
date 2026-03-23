@@ -1,10 +1,10 @@
 /*
 Add Desiccant Dehumidifier (of type Balanced Flow) to an AHU branch
 
+Purpose:
 This DesignBuilder C# script inserts an EnergyPlus HeatExchanger:Desiccant:BalancedFlow component into an existing air loop supply branch.
 
-Purpose
-
+Main Steps:
 1) Locate the AHU main supply Branch for a given air loop
 2) Determine the process-side inlet node from the branch field list at the chosen insertion point
 3) Create a new process outlet node name and rewire the downstream component to use it
@@ -12,7 +12,7 @@ Purpose
 5) Add the HeatExchanger:Desiccant:BalancedFlow object plus its PerformanceDataType1 object to the IDF
 6) Save the modified IDF
 
-How to Use
+How to Use:
 
 Configuration
 - insertAtBranchFieldIndex refers to the Branch field list ordering. In a Branch, components are stored in repeated quads:
@@ -23,11 +23,11 @@ Configuration
    - Inserts a new quad at insertAtBranchFieldIndex
    - Updates downstream component inlet node and branch outlet-node field using fixed offsets
 
-Prerequisites (required placeholders)
-
+Prerequisites / Placeholders
 This script expects an Air Loop to be in place in the model, listed in the USER CONFIGURATION SECTION.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

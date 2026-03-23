@@ -1,22 +1,24 @@
 /*
 Override radiant heat gain fraction for People objects.
 
+Purpose:
 This DesignBuilder C# script overrides the EnergyPlus People object "Fraction Radiant" field.
 DesignBuilder typically applies a default radiant fraction (commonly 0.3). 
 This script enforces a user-defined value for all People objects in the IDF just before the EnergyPlus simulation runs.
 
-Purpose
+Main Steps:
 1) Find all People objects
 2) Set "Fraction Radiant" to a configured value
 3) Save the modified IDF
 
-How to Use
+How to Use:
 
 Configuration
 - radiantFraction: Radiant fraction of sensible heat gains from people (dimensionless, 0–1).
   This value will be applied to every People object found in the IDF.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Collections.Generic;

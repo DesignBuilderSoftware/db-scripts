@@ -1,7 +1,7 @@
 /*
 Replaces SetpointManager from type Warmest to TemperatureFlow.
 
-Purpose
+Purpose:
 This DesignBuilder C# script replaces SetpointManager:Warmest with SetpointManager:WarmestTemperatureFlow.
 This object  provides a setpoint manager that attempts to establish a supply air setpoint that will meet 
 the cooling load of the zone needing the coldest air at the maximum zone supply air flowrate. 
@@ -13,7 +13,7 @@ Main Steps:
   using the same core fields (Name, Control Variable, Air Loop, Min/Max setpoint, Setpoint Node/NodeList),
   and applying the configured Strategy and Minimum Turndown Ratio.
 
-How to Use
+How to Use:
 
 Configuration
 - Choose strategy type: "TemperatureFirst" (default) or "FlowFirst"
@@ -22,7 +22,8 @@ Configuration
 Prerequisites / Placeholders
 Base model must already contain at least one SetpointManager:Warmest with name containing "WarmestTemperatureFlow"
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Collections.Generic;

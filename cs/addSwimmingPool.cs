@@ -1,31 +1,28 @@
 /*
 Indoor Swimming Pool (EnergyPlus) – IDF Injection + HW Loop Demand Connection Script
 
+Purpose:
 This DesignBuilder C# script adds an EnergyPlus `SwimmingPool:Indoor` object to the exported IDF and connects it to a specified Hot Water (HW) plant loop demand side.
 It runs automatically before the EnergyPlus simulation starts and modifies the IDF in-place.
 
-Purpose
+Main Steps:
+1) Create a new demand-side `Branch` containing the `SwimmingPool:Indoor` component and its inlet/outlet nodes.
+2) Insert that branch into the target HW loop demand side.
+3) Load shared schedules used by the pool object (activity, cover, make-up water, occupancy, setpoint).
+4) Add Output:Variable requests relevant to Indoor Swimming Pool reporting.
+5) Save the modified IDF.
 
-1) Load the exported EnergyPlus IDF/IDD
-2) Create a new demand-side `Branch` containing the `SwimmingPool:Indoor` component and its inlet/outlet nodes.
-3) Insert that branch into the target HW loop demand side.
-4) Load shared schedules used by the pool object (activity, cover, make-up water, occupancy, setpoint).
-5) Add Output:Variable requests relevant to Indoor Swimming Pool reporting.
-6) Save the modified IDF.
+How to Use:
 
-How to Use
-- Edit the `AddSwimmingPool(...)` call(s) inside `BeforeEnergySimulation()`.
-
-Configuration (parameters)
-
+Configuration
+Edit the `AddSwimmingPool(...)` call(s) inside `BeforeEnergySimulation()`:
 - swimmingPoolName: Unique pool name used for the SwimmingPool:Indoor object and to generate node names.
 - floorSurfaceName: Name of the floor surface that represents the pool surface (must match an existing Surface name in the IDF).
 - hwLoopName: Base name of the HW PlantLoop used to locate demand-side objects.
 - averageDepth: Pool average depth in meters.
 - setpointScheduleName: Name of a temperature schedule (must exist or be created by this script).
 
-Prerequisites (required placeholder objects)
-
+Prerequisites / Placeholders
 The base model / exported IDF must already contain:
 - A How Water Loop (referenced as "HW Loop" in the example case).
 - A surface with name exactly matching your model's surface in which the pool will be located
@@ -33,7 +30,8 @@ The base model / exported IDF must already contain:
     NOTE: The surface name can be found Miscellaneous model data tab under the Name in last EnergyPlus calculation.
 - A setpoint schedule for the pool water temperature (referenced as "PoolSetpointTempSched1" in the example case)
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

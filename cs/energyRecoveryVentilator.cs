@@ -1,10 +1,10 @@
 /*
 Replace all zone exhaust fans with ERVs.
 
+Purpose:
 This DesignBuilder C# script edits the IDF to replace Fan:ZoneExhaust objects with ZoneHVAC:EnergyRecoveryVentilator (ERV) systems.
 
-Purpose
-
+Main Steps:
 1) Find all Fan:ZoneExhaust objects that are referenced inside ZoneHVAC:EquipmentList
 2) Create a ZoneHVAC:EnergyRecoveryVentilator, its Controller, two Fan:SystemModel objects, and a HeatExchanger object per exhaust fan
 3) Adjust the required NodeList
@@ -12,7 +12,7 @@ Purpose
 5) Remove the original Fan:ZoneExhaust objects from the IDF
 6) Add a scheduled SetpointManager + NodeList and populating it with all heat exchanger supply outlet nodes
 
-How to Use
+How to Use:
 
 Configuration
 - Configure ERV parameters by editing the 'boilerplate' IDF text below:
@@ -20,12 +20,12 @@ Configuration
    - spmBoilerplateIdf: setpoint manager / schedule / node list for HX outlet nodes
 - ERV availability schedule and nominal air flow is read from Zone exhaust fan inputs in DesignBuilder.
 
-Prerequisites (required placeholders)
-
+Prerequisites / Placeholders
 - Ensure your model contains one or more Fan:ZoneExhaust objects assigned to zones
 - The availability schedule and nominal air flow defined in the Fan:ZoneExhaust via user interface is applied in the ERV
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Collections.Generic;

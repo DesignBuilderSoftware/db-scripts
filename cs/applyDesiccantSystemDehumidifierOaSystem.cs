@@ -1,30 +1,31 @@
 /*
 Add Desiccant Dehumidifier (type System) to an AirLoopHVAC outdoor air system (OA System).
 
+Purpose:
 This DesignBuilder C# script inserts a Dehumidifier:Desiccant:System into an air loop’s AirLoopHVAC:OutdoorAirSystem:EquipmentList, 
 downstream of a CoilSystem:Cooling:DX component.
 It also loads all supporting IDF objects required by the desiccant system plus a HX performance object.
 
-Purpose
+Main Steps:
 1) Find the CoilSystem:Cooling:DX entry in that OA equipment list.
 2) Identify the companion DX cooling coil referenced by the DX coil system.
 3) Rewire nodes so the new desiccant component sits downstream of the DX coil and upstream
   of the next OA component (special handling if the next component is OutdoorAir:Mixer).
 4) Insert Dehumidifier:Desiccant:System into the OA equipment list and load the IDF text for the new objects.
 
-How to Use
+How to Use:
 
 Configuration
 Defined in the AddDesiccantDehumidifier():
 - airLoopName: Must match the model's IDF naming.
 
-Prerequisites (required placeholders)
-
+Prerequisites / Placeholders
 This script expects an Air Loop to be in place in the model defined in AddDesiccantDehumidifier().
 The component is meant to be used in conjunction with a DX cooling coil.
 The script looks up a DX coil coil and places the dehumidifer downstream of the coil.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

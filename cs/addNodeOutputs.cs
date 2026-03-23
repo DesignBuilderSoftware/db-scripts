@@ -1,26 +1,21 @@
 /*
 Targeted Node Output Variable Request Script
 
-This DesignBuilder C# script adds Output:Variable objects for a limited set of node names to help avoid extremely large output files that can occur when reporting variables for all nodes in large models.
+Purpose:
+This DesignBuilder C# script adds Output:Variable objects for a limited set of node names to help avoid extremely 
+large output files that can occur when reporting variables for all nodes in large models.
 
-Purpose
-The script reduces output size by requesting only selected node output variables for outlet nodes referenced by:
-- AirLoopHVAC: "Supply Side Outlet Node Names"
-- PlantLoop: "Plant Side Outlet Node Name"
-- CondenserLoop: "Condenser Side Outlet Node Name"
-
-Main Steps
-1) Load the EnergyPlus IDF using EpNet IdfReader.
-2) Collect outlet node names from AirLoopHVAC, PlantLoop and CondenserLoop objects.
+Main Steps:
+1) Collect outlet node names from AirLoopHVAC, PlantLoop and CondenserLoop objects.
    - If a node name ends with "List", it is assumed to reference a NodeList object, and the script uses the first node entry in that NodeList.
-3) For each requested variable name, add Output:Variable objects for each collected node.
-4) Save the modified IDF before the EnergyPlus simulation runs.
+2) For each requested variable name, add Output:Variable objects for each collected node.
+3) Save the modified IDF before the EnergyPlus simulation runs.
 
-How to Use
+How to Use:
 
 Configuration
 - requestedVariables:
-  Add/remove entries using the exact EnergyPlus variable names you want to request:
+  Add/remove entries using the exact EnergyPlus variable names you want to request. For example:
     System Node Temperature
     System Node Mass Flow Rate
     System Node Humidity Ratio
@@ -48,14 +43,15 @@ Configuration
 - reportingFrequency:
   Set to a valid Output:Variable reporting frequency string.
 
-Prerequisites
+Prerequisites / Placeholders
 Base model must contain the required objects/fields:
 - AirLoopHVAC objects (Supply Side Outlet Node Names)
 - PlantLoop objects (Plant Side Outlet Node Name)
 - CondenserLoop objects (Condenser Side Outlet Node Name)
 If any of these fields reference a NodeList, the NodeList object must exist in the IDF.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Collections.Generic;

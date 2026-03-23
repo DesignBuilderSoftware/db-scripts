@@ -1,10 +1,11 @@
 /*
 CAV to Mixer Replacement for Zones with VRF Terminal Units
 
+Purpose:
 This DesignBuilder C# script modifies the EnergyPlus IDF by replacing AirTerminal:SingleDuct:ConstantVolume:NoReheat (CAV NoReheat) 
 terminals with AirTerminal:SingleDuct:Mixer terminals, in zones that contain a ZoneHVAC:TerminalUnit:VariableRefrigerantFlow (VRF terminal unit).
 
-Purpose (main steps)
+Main Steps:
 The goal is to allow mixed air delivery at the zone inlet by combining:
 - Primary air from a central system (e.g., DOAS) via the terminal inlet node
 - Secondary air derived from the VRF terminal unit inlet node (treated here as the mixer secondary inlet)
@@ -18,7 +19,7 @@ The goal is to allow mixed air delivery at the zone inlet by combining:
    - Rewire the VRF cooling coil inlet node to the (old) terminal outlet node
    - Remove the old CAV NoReheat terminal and outlet node from the zone inlet NodeList (if present)
 
-How to Use
+How to Use:
 
 Configuration
 - Target objects are detected by object types (constants at top of the script):
@@ -27,13 +28,14 @@ Configuration
   - Zone unit type: ZoneHVAC:TerminalUnit:VariableRefrigerantFlow
   - Distribution unit type: ZoneHVAC:AirDistributionUnit
 
-Prerequisites (required placeholders)
+Prerequisites / Placeholders
 Base model must contain, for each target zone:
 - ZoneHVAC:EquipmentList that includes:
   - ZoneHVAC:AirDistributionUnit (points to an AirTerminal:SingleDuct:ConstantVolume:NoReheat)
   - ZoneHVAC:TerminalUnit:VariableRefrigerantFlow
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

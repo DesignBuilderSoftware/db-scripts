@@ -1,10 +1,11 @@
 /*
 Apply Desuperheater Reheat Coil to AirLoopHVAC:UnitaryHeatCool Systems
 
+Purpose:
 This DesignBuilder C# script modifies the EnergyPlus IDF to replace the existing reheat coil on selected AirLoopHVAC:UnitaryHeatCool units
 with a Coil:Heating:Desuperheater that reclaims heat from the unit’s cooling coil.
 
-Purpose
+Main Steps:
 1) Scan all AirLoopHVAC:UnitaryHeatCool objects in the IDF
 2) Select target units by name (must contain a configurable substring, by default set as "desuperheater")
 3) For each target unit:
@@ -13,20 +14,20 @@ Purpose
   - Update the unitary “Reheat Coil Object Type/Name” fields to point to the new desuperheater coil
 4) Save the updated IDF
 
-How to Use
+How to Use:
 
 Configuration
 - Name your target unitary systems so their Name contains the selection substring (default: "desuperheater").
 - Define desuperheater coil efficiency (see desuperheaterCoilTemplate).
 - Availability schedule, temperature setpoint, and node connections are taken from the existing reheat coil (placeholder).
 
-Prerequisites (required placeholders)
-
+Prerequisites / Placeholders
 - Eligible AirLoopHVAC:UnitaryHeatCool objects must have the trigger substring ("desuperheater") in the name
 - The unit must include CoolReheat humidity control so that a supplemental (reheat) coil is present and referenced.
     This setting can be controled in 'Unitary System settings > Control > Dehumidification control type' in DB model.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

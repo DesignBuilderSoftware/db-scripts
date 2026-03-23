@@ -1,11 +1,11 @@
 /*
 Replace Ground Heat Exchanger of type System with Plant Temperature Source component
 
-Purpose
+Purpose:
 This DesignBuilder C# script replaces "GroundHeatExchanger:System" with "PlantComponent:TemperatureSource".
 This object used to simulate systems with a known supply temperature (e.g., rivers, wells, and other configurations where a known temperature is pumped back into the plant system).
 
-Main Steps
+Main Steps:
 1) Finds a placeholder GroundHeatExchanger:System object by name
 2) Replaces references to that GroundHeatExchanger:System object in PlantEquipmentList and Branch
 3) Creates a PlantComponent:TemperatureSource object using:
@@ -14,13 +14,13 @@ Main Steps
    - A constant source temperature defined in this script
 4) Removes the original GroundHeatExchanger:System object and saves the updated IDF
 
-How to Use
+How to Use:
 
 Configuration
 - Set 'objectName' to the Name of the GroundHeatExchanger:System placeholder you want to convert.
 - Set 'sourceTemperatureC' to the desired constant temperature in °C.
 
-Prerequisites (required placeholders)
+Prerequisites / Placeholders
 - The base model must contain a GroundHeatExchanger:System placeholder object.
 
 DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 

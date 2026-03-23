@@ -1,11 +1,11 @@
 /*
 Check Proposed vs Baseline (ASHRAE 90.1) for the Active Building
 
-Purpose
+Purpose:
 - Determine whether the currently simulated building is the ASHRAE 90.1 Proposed case or Baseline case.
 - NOTE: This can be used to conditionally apply other script actions only to specific building variants.
 
-How to Use
+How to Use:
 
 Configuration
 - Attribute key checked: "ASHRAE901Type"
@@ -14,7 +14,8 @@ Configuration
 Prerequisites
 - The model must be configured to to an ASHRAE 90.1 Model (Proposed/ Baseline vesrions)
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Windows.Forms;

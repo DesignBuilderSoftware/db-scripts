@@ -1,11 +1,11 @@
 /*
 UpdateDesignSpecification – Apply Mechanical Ventilation “Operation Schedule” to Detailed HVAC Outdoor Air Specs
 
-Purpose
+Purpose:
 This DesignBuilder C# script reads each zone’s Mechanical Ventilation “Operation Schedule” from the model
 and assigns the corresponding EnergyPlus schedule name to the zone’s DesignSpecification:OutdoorAir object.
 
-Main Steps
+Main Steps:
 1) Read the DesignBuilder “Schedules” table (model data).
 2) Build a map of Zone IDF Name to MechanicalVentilationSchedule handle (string) from model attributes.
 3) Parse the EnergyPlus IDF to find existing schedule names (Schedule:Compact).
@@ -16,13 +16,14 @@ Main Steps
    - Set “Outdoor Air Schedule Name” to that schedule name.
 NOTE: he script currently only checks Schedule:Compact objects.
 
-How to Use
+How to Use:
 
-Prerequisites (required placeholders)
+Prerequisites / Placeholders
 - Zones must have the attribute “MechanicalVentilationSchedule” populated via model user interface.
 - The EnergyPlus IDF must contain DesignSpecification:OutdoorAir objects created by Detailed HVAC.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

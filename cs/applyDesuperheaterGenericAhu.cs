@@ -1,10 +1,11 @@
 /*
 Replace Electric Heating Coils with Desuperheater Coils (for Generic AHUs)
 
+Purpose:
 This DesignBuilder C# script scans EnergyPlus Branch objects and replaces
 Coil:Heating:Electric entries with Coil:Heating:Desuperheater for selected AHUs.
 
-Purpose
+Main Steps:
 1) Identify target Branch objects by name filters:
    - Branch Name contains "desuperheater" and "AHU Main Branch"
 2) For each target Branch:
@@ -16,15 +17,14 @@ Purpose
    - Remove the original Coil:Heating:Electric object from the IDF.
 3) Save the modified IDF before the EnergyPlus simulation runs.
 
-How to Use
+How to Use:
 
 Configuration
 - Target selection is controlled by Branch Name text matching:
   - Must contain: "desuperheater" and "AHU Main Branch"
 - Define desuperheater coil efficiency (see AddDesuperheaterCoil()).
 
-Prerequisites (required placeholders)
-
+Prerequisites / Placeholders
 Target Branches must include:
 - A "CoilSystem:Cooling:DX" component (the script uses this to find the referenced DX cooling coil).
 - A "Coil:Heating:Electric" component to be replaced by the Desuperheater. It also provides:
@@ -32,7 +32,8 @@ Target Branches must include:
     - Temperature setpoint node name (as defined in the model)
     - Inlet / outlet node names (automatically obtained)
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

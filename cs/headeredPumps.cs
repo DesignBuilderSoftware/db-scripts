@@ -1,27 +1,28 @@
 /*
 Headered Pump Replacement Script
 
+Purpose:
 This DesignBuilder C# script converts standard Pump:VariableSpeed and Pump:ConstantSpeed pump objects into headered pump equivalents (HeaderedPumps:*).
 
-Purpose
-
+Main Steps:
 For each configured pump:
 1) Locate the original Pump:* object by name.
 2) Create an equivalent HeaderedPumps:* object by taking fields from the original pump.
 3) Update references in Branch objects from Pump:* to HeaderedPumps:* for the same pump name.
 4) Insert (Load) the new HeaderedPumps:* object and remove the original Pump:* object.
 
-How to Use
+How to Use:
 
 Configuration
 - Configure pumps to be replaced (pumpType, pumpName, number of pumps in headered pump bank)
 - All pump attributes are taken from DesignBuilder User Interface (HVAC layout).
 
-Prerequisites (required placeholders)
-- The base model must already contain the target pump objects:
-  - Pump:ConstantSpeed and/or Pump:VariableSpeed with names matching your configuration.
+Prerequisites / Placeholders
+The base model must already contain the target pump objects:
+- Pump:ConstantSpeed and/or Pump:VariableSpeed with names matching your configuration.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Linq;

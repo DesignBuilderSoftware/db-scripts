@@ -1,17 +1,16 @@
 /*
 Add EvaporativeCooler:Direct:ResearchSpecial to an air loop branch.
 
+Purpose:
 This DesignBuilder C# script modifies the IDF by inserting an EvaporativeCooler:Direct:ResearchSpecial into a specified Branch for each target air loop name.
 
-Purpose
+Main Steps:
+1) Locate the target Branch object for each air loop (by name convention)
+2) Break the existing node connection at a specific Branch field
+3) Insert the evaporative cooler (type/name/inlet/outlet) into the Branch equipment list
+4) Add supporting objects (availability schedule, setpoint schedule, setpoint manager, and output variables)
 
-The script edits the IDF to:
-- Locate the target Branch object for each air loop (by name convention)
-- Break the existing node connection at a specific Branch field
-- Insert the evaporative cooler (type/name/inlet/outlet) into the Branch equipment list
-- Add supporting objects (availability schedule, setpoint schedule, setpoint manager, and output variables)
-
-How to Use
+How to Use:
 
 Configuration
 - airLoopNames:
@@ -22,12 +21,12 @@ Configuration
   The EvaporativeCooler object name is "<airLoopName> AHU Cooler" and related schedules/setpoint manager are created
   using that name as a prefix.
 
-Prerequisites
-
+Prerequisites / Placeholders
 Base model must contain a Branch object named "<airLoopName> AHU Main Branch" for each entry in airLoopNames.
 These act as placeholders that allow the script to identify where to insert the new component.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

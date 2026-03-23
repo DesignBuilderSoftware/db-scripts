@@ -1,17 +1,18 @@
 /*
 Add Electric Heating Coil to an Air Loop Branch (Return Air Stream)
 
+Purpose:
 This DesignBuilder C# script inserts a Coil:Heating:Electric into the air loop branch for selected air loops by editing the EnergyPlus IDF before simulation.
 
-Purpose
-- For each target air loop name:
-  - Find the corresponding Branch object (following naming convention "<Air Loop Name> AHU Main Branch")
-  - Identify the existing downstream node currently referenced by the branch
-  - Insert a new coil component into the branch equipment list
-  - Add required supporting objects (coil, availability schedule, setpoint schedule, scheduled setpoint manager)
-  - Add a couple of Output:Variable requests
+Main Steps:
+For each target air loop name:
+1) Find the corresponding Branch object (following naming convention "<Air Loop Name> AHU Main Branch")
+2) Identify the existing downstream node currently referenced by the branch
+3) Insert a new coil component into the branch equipment list
+4) Add required supporting objects (coil, availability schedule, setpoint schedule, scheduled setpoint manager)
+5) Add a couple of Output:Variable requests
 
-How to Use
+How to Use:
 
 Configuration
 - targetAirLoopNames:
@@ -24,11 +25,11 @@ Configuration
     - SetpointManager:Scheduled
     - Output:Variable entries
 
-Prerequisites
-
+Prerequisites / Placeholders
 - Each target air loop must already contain a Branch object named "<Air Loop Name> AHU Main Branch".
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

@@ -1,10 +1,11 @@
 /*
 Apply Desuperheater Coil to Generic Unitary System Objects
 
+Purpose:
 This DesignBuilder C# script runs before the EnergyPlus simulation and modifies the IDF to replace a unitary
 system’s supplemental (reheat) heating coil with a Coil:Heating:Desuperheater for eligible systems.
 
-Purpose
+Main Steps:
 1) Find all AirLoopHVAC:UnitarySystem objects whose Name contains a configurable substring (default: "desuperheater").
 2) For each match:
    - Read the unitary system’s Supplemental Heating Coil and Cooling Coil references
@@ -13,7 +14,7 @@ Purpose
    - Insert the new desuperheater coil object into the IDF
    - Remove the original reheat coil object from the IDF
 
-How to Use
+How to Use:
 
 Configuration
 - Name your target AirLoopHVAC:UnitarySystem objects so their Name contains the trigger substring.
@@ -21,13 +22,13 @@ Configuration
 - Define desuperheater coil efficiency (see desuperheaterCoilIdfTemplate).
 - Availability schedule, temperature setpoint, and node connections are taken from the existing reheat coil (placeholder).
 
-Prerequisites (required placeholders)
-
+Prerequisites / Placeholders
 - Eligible AirLoopHVAC:UnitarySystem objects must have the trigger substring ("desuperheater") in the name
 - The unit must include CoolReheat humidity control so that a supplemental (reheat) coil is present and referenced.
     This setting can be controled in 'Unitary System settings > Control > Dehumidification control type' in DB model.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

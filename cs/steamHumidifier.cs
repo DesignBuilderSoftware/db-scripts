@@ -1,11 +1,11 @@
 /*
 Replace Electric Steam Humidifiers with Gas Steam Humidifiers
 
-Purpose
+Purpose:
 This DesignBuilder C# script modifies the EnergyPlus IDF by replacing Humidifier:Steam:Electric 
 objects with Humidifier:Steam:Gas objects on selected air loops.
 
-Main Steps
+Main Steps:
 1) Find Branch objects that match the naming convention:
    - Branch name contains both "steamgas" and "AHU Main Branch"
 2) Within matching Branch objects, locate equipment entries where:
@@ -17,7 +17,7 @@ Main Steps
 4) Add Output:Variable requests for humidifier natural gas rate.
 5) Save the updated IDF.
 
-How to Use
+How to Use:
 
 Configuration
 - The script only updates Branch objects where the Branch name contains both "steamgas" and "AHU Main Branch"

@@ -1,27 +1,29 @@
 /*
 Infiltration Conversion Script (Flow/ExteriorWallArea)
 
+Purpose:
 This DesignBuilder C# script converts ZoneInfiltration:DesignFlowRate objects to use the "Flow/ExteriorWallArea" calculation method
 and populates the "Flow per Exterior Surface Area" field using the infiltration value defined in the DesignBuilder UI.
 
-Purpose (main steps)
+Main Steps:
 1) Retrieve each zone’s infiltration value from DesignBuilder attributes (InfiltrationValueI4).
 2) Update every ZoneInfiltration:DesignFlowRate object:
    - Set Design Flow Rate Calculation Method = "Flow/ExteriorWallArea"
    - Set Flow per Exterior Surface Area = (DB value) / 3600  [m3/h-m2 to m3/s-m2]
 3) Save the modified IDF back to disk before EnergyPlus starts.
 
-How to Use
+How to Use:
 
 Configuration
 - The infiltration rate is retrieved from DesignBuilder interface.
     This setting can be controled in 'Construction > Airtightness > Model Infiltration'.
 
-Prerequisites (required placeholders)
+Prerequisites / Placeholders
 - This script requires the DesignBuilder "Infiltration units" option set to "3 - m3/h-m2 at 4Pa".
     This setting can be controled in 'Model Options > Natural Ventilation and Infiltration > Infiltration Units'.
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

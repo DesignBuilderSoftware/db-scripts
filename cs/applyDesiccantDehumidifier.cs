@@ -1,11 +1,11 @@
 /*
 Add Desiccant Dehumidifier to an Air Handling Unit (AHU) Supply Path
 
+Purpose:
 This DesignBuilder C# script inserts an EnergyPlus Dehumidifier:Desiccant:NoFans component into an existing air loop supply branch
 at a specified position, then rewires the downstream component inlet node so airflow passes through the dehumidifier.
 
-Purpose
-
+Main Steps:
 1) Locate the AHU main supply Branch for a given air loop
 2) Insert Dehumidifier:Desiccant:NoFans into the Branch component list at a given position
 3) Create required supporting objects:
@@ -19,7 +19,7 @@ Purpose
 
 How to Use
 
-Configuration
+Configuration:
 AddDesiccantDehumidifier parameters:
    - idfReader: IdfReader instance for the current simulation IDF/IDD
    - airLoopName: Name of the target EnergyPlus AirLoopHVAC (used to derive object names)
@@ -28,12 +28,12 @@ AddDesiccantDehumidifier parameters:
    - regenerationCoilType: RegenerationCoilType.Fuel or RegenerationCoilType.Water (default Fuel)
    - hwLoopName: Plant loop name (required when regenerationCoilType = Water)
 
-Prerequisites (required placeholders)
-
+Prerequisites / Placeholders:
 This script expects an Air Loop to be in place in the model (airLoopName referenced in AddDesiccantDehumidifier())
 A hot water water loop must be in place if using RegenerationCoilType.Water (hwLoopName referenced in AddDesiccantDehumidifier())
 
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;

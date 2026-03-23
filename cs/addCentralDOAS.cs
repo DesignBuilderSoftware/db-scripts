@@ -1,99 +1,134 @@
 /*
-This script adds a cental deficated outdoor air system unit to deliver outdoor air to specified air loops.
+Central Dedicated Outdoor Air System (DOAS) Injection Script
 
-The unit includes hot and chilled water coils to pre-treat the air and an optional heat exchanger.
+Purpose:
+This DesignBuilder C# script adds a central Dedicated Outdoor Air System (DOAS) that delivers outdoor air to one or more specified air loops.
+The DOAS is created as an EnergyPlus AirLoopHVAC:DedicatedOutdoorAirSystem and includes:
+- Chilled water cooling coil (Coil:Cooling:Water)
+- Hot water heating coil (Coil:Heating:Water)
+- Supply fan (Fan:SystemModel)
+- Optional heat recovery heat exchanger (HeatExchanger:AirToAir:SensibleAndLatent)
 
-The system is specified via the 'DoasSpecs' object.
-Example specification is present in the 'BeforeEnergySimulation' hookpoint below.
+Main Steps:
+1) Generate all required DOAS objects from the DoasSpecs configuration (schedules, OA system, coils, setpoint managers, etc.).
+2) Insert the generated IDF objects into the model.
+3) Connect the DOAS coil water-side branches to the specified CHW/HW plant loops (demand side).
+4) If heat recovery is disabled, keep the HX object but switch it OFF via its availability schedule.
 
-Note that E+9.4 requires air loop names to be in ALL CAPS.
+How to Use:
+
+Configuration
+- Name: DOAS system name prefix used to create all related object names.
+- ChildAirLoops: List of air loop names served by the DOAS in ALL CAPS (these are referenced in AirLoopHVAC:DedicatedOutdoorAirSystem).
+- HwLoopName / ChwLoopName: Plant loop names used to connect the DOAS heating/cooling coil demand branches.
+- IncludeHX: If false, the HX remains in the IDF but is disabled by setting its Availability Schedule to an always-off schedule.
+- SupplyTemperature: Constant supply air setpoint used by scheduled setpoint managers.
+NOTE: E+9.4 requires air loop names to be in ALL CAPS.
+
+Prerequisites / Placeholders
+- A CHW plant loop and HW plant loop must already exist with names matching ChwLoopName and HwLoopName.
+- Each plant loop must include (on the demand side):
+  - A BranchList named: "<LoopName> Demand Side Branches"
+  - A Connector:Splitter named: "<LoopName> Demand Splitter"
+  - A Connector:Mixer named: "<LoopName> Demand Mixer"
+- The target air loops referenced in ChildAirLoops must exist and be spelled exactly as in the IDF.
+  Note: some workflows require air loop names in ALL CAPS (as mentioned in the original script header).
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;
-using System.Runtime;
 using System.Collections.Generic;
-using System.Windows.Forms;
 using System.Linq;
+using System.Windows.Forms;
 using DB.Extensibility.Contracts;
 using EpNet;
 
 namespace DB.Extensibility.Scripts
 {
-   public class IdfFindAndReplace : ScriptBase, IScript
-   {
-      public override void BeforeEnergySimulation()
-      {
-         IdfReader idfReader = new IdfReader(
-             ApiEnvironment.EnergyPlusInputIdfPath,
-             ApiEnvironment.EnergyPlusInputIddPath
-         );
+    public class IdfFindAndReplace : ScriptBase, IScript
+    {
+        public override void BeforeEnergySimulation()
+        {
+            IdfReader idf = new IdfReader(
+                ApiEnvironment.EnergyPlusInputIdfPath,
+                ApiEnvironment.EnergyPlusInputIddPath
+            );
 
-         DoasIdfHandler idfHandler = new DoasIdfHandler(idfReader);
+            DoasIdfHandler doasIdfHandler = new DoasIdfHandler(idf);
 
-         List<string> doas1AirLoops = new List<string> { "AIRLOOP1" }; // specify air loops connected to the central DOAS
-         string chwLoopName = "CHW Loop"; // specify chw loop connected to the central DOAS cooling coil
-         string hwLoopName = "HW Loop";  // specify hw loop connected to the central DOAS heating coil
-         string doasName = "DOAS1";
-         double supplyAirTemperature = 17.5; // supply air temperature in degrees of Celsius
-         bool includeHX = true;
+            // ---------------------------
+            // USER CONFIGURATION SECTION
+            // ---------------------------
 
-         DoasSpecs doas1 = new DoasSpecs(doasName, doas1AirLoops, hwLoopName, chwLoopName, includeHX, supplyAirTemperature);
+            List<string> childAirLoops = new List<string> { "AIRLOOP1" }; // Specify air loops connected to the central DOAS
+            string chwPlantLoopName = "CHW Loop"; // specify chw loop connected to the central DOAS cooling coil
+            string hwPlantLoopName = "HW Loop";   // specify hw loop connected to the central DOAS heating coil
+            string doasName = "DOAS1"; // DOAS name prefix (used to generate object names in the injected IDF)
+            double supplyAirTemperatureC = 17.5; // Constant DOAS supply air temperature setpoint [°C]
+            bool includeHeatRecoveryHx = true; // If false, the heat exchanger object remains but is disabled using an always-off schedule
 
-         // display doas specification (comment out to disable the message box pop-up)
-         MessageBox.Show(doas1.GetInfo());
+            DoasSpecs doas1 = new DoasSpecs(doasName, childAirLoops, hwPlantLoopName, chwPlantLoopName, includeHeatRecoveryHx, supplyAirTemperatureC);
 
-         idfHandler.LoadDoas(doas1);
-      }
-   }
+            MessageBox.Show(doas1.GetInfo()); // Comment out this line to disable pop-up message
 
-   public class DoasSpecs
-   {
-      public string Name;
-      public List<string> ChildAirLoops;
-      public string HwLoopName;
-      public string ChwLoopName;
-      public bool IncludeHX;
-      public double SupplyTemperature;
+            doasIdfHandler.LoadDoas(doas1);
+        }
+    }
 
-      public DoasSpecs() { }
+    public class DoasSpecs
+    {
+        public string Name;
+        public List<string> ChildAirLoops;
+        public string HwLoopName;
+        public string ChwLoopName;
+        public bool IncludeHX;
+        public double SupplyTemperature;
 
-      public DoasSpecs(string name, List<string> childAirLoops, string hwLoopName, string chwLoopName, bool includeHX, double supplyTemperature)
-      {
-         Name = name;
-         ChildAirLoops = childAirLoops;
-         HwLoopName = hwLoopName;
-         ChwLoopName = chwLoopName;
-         IncludeHX = includeHX;
-         SupplyTemperature = supplyTemperature;
-      }
+        public DoasSpecs() { }
 
-      public string HwBranchName { get { return this.Name + " DOAS Heating Coil HW Loop Demand Side Branch"; } }
-      public string ChwBranchName { get { return this.Name + " DOAS Cooling Coil CHW Loop Demand Side Branch"; } }
-      public string FanName { get { return this.Name + "DOAS OA Supply Fan"; } }
-      public string HxName { get { return this.Name + " DOAS Heat Recovery Device"; } }
-      public string OffScheduleName { get { return this.Name + " ALWAYS_OFF"; } }
+        public DoasSpecs(string name, List<string> childAirLoops, string hwLoopName, string chwLoopName, bool includeHX, double supplyTemperature)
+        {
+            Name = name;
+            ChildAirLoops = childAirLoops;
+            HwLoopName = hwLoopName;
+            ChwLoopName = chwLoopName;
+            IncludeHX = includeHX;
+            SupplyTemperature = supplyTemperature;
+        }
 
+        // Derived names used throughout the injected IDF objects
+        public string HwBranchName { get { return this.Name + " DOAS Heating Coil HW Loop Demand Side Branch"; } }
+        public string ChwBranchName { get { return this.Name + " DOAS Cooling Coil CHW Loop Demand Side Branch"; } }
+        public string FanName { get { return this.Name + "DOAS OA Supply Fan"; } }
+        public string HxName { get { return this.Name + " DOAS Heat Recovery Device"; } }
+        public string OffScheduleName { get { return this.Name + " ALWAYS_OFF"; } }
 
-      public string GetInfo()
-      {
-         string childLoopNames = String.Join("\n - ", this.ChildAirLoops);
-         string text = @"DOAS: {0}
+        public string GetInfo()
+        {
+            // Provide a summary of the current configuration
+            string childLoopNames = String.Join("\n - ", this.ChildAirLoops);
+            string text = @"DOAS: {0}
 HW loop: {1}
 CHW loop: {2}
 HX included: {3}
 Supply temperature: {4}
 Child air loops:
 - {5}";
-         return string.Format(text, this.Name, this.HwLoopName, this.ChwLoopName, this.IncludeHX, this.SupplyTemperature, childLoopNames);
-      }
+            return string.Format(text, this.Name, this.HwLoopName, this.ChwLoopName, this.IncludeHX, this.SupplyTemperature, childLoopNames);
+        }
 
-      public string GetIDFObjects()
-      {
-         string airLoops = String.Join(",\n", this.ChildAirLoops);
-         int airLoopCount = this.ChildAirLoops.Count;
-         string airLoopInlets = String.Join(",\n", this.ChildAirLoops.Select(x => x + " AHU Outdoor Air Inlet"));
-         string airLoopOutlets = String.Join(",\n", this.ChildAirLoops.Select(x => x + " AHU Relief Air Outlet"));
-         string idfObjects = @"
+        public string GetIDFObjects()
+        {
+            // Create the list of served air loops and their mixer/splitter node lists
+            string airLoops = String.Join(",\n", this.ChildAirLoops);
+            int airLoopCount = this.ChildAirLoops.Count;
+            string airLoopInlets = String.Join(",\n", this.ChildAirLoops.Select(x => x + " AHU Outdoor Air Inlet"));
+            string airLoopOutlets = String.Join(",\n", this.ChildAirLoops.Select(x => x + " AHU Relief Air Outlet"));
+
+            // IDF template (injected into the model as text via Reader.Load)
+            string idfObjects = @"
 !-   ===========  ALL OBJECTS IN CLASS: SCHEDULE:COMPACT ===========
 
 Schedule:Compact,
@@ -124,7 +159,7 @@ Schedule:Compact,
 !-   ===========  ALL OBJECTS IN CLASS: FAN:SYSTEMMODEL ===========
 
 Fan:SystemModel,
-   {0}DOAS OA Supply Fan,                                             !- Name
+   {0}DOAS OA Supply Fan,                                         !- Name
    {0} ALWAYS_ON,                                                 !- Availability Schedule Name
    {0} DOAS Heating Coil Air Outlet Node,                         !- Air Inlet Node Name
    {0} AirLoopSplitterInlet,                                      !- Air Outlet Node Name
@@ -186,7 +221,7 @@ AirLoopHVAC:OutdoorAirSystem:EquipmentList,
    Coil:Heating:Water,                                            !- Component 2 Object Type
    {0} DOAS HW Heating Coil,                                      !- Component 2 Name
    Fan:SystemModel,                                               !- Component 3 Object Type
-   {0}DOAS OA Supply Fan;                                             !- Component 3 Name
+   {0}DOAS OA Supply Fan;                                         !- Component 3 Name
 
 
 !-   ===========  ALL OBJECTS IN CLASS: AIRLOOPHVAC:OUTDOORAIRSYSTEM ===========
@@ -284,7 +319,7 @@ Coil:Cooling:Water,
   CrossFlow,                                                      ! - Heat Exchanger Configuration
   ;                                                               ! - Water Storage Tank for Condensate Collection
 
- Coil:Heating:Water,
+Coil:Heating:Water,
   {0} DOAS HW Heating Coil,                                       ! - Component name
   {0} ALWAYS_ON,                                                  ! - Availability schedule
   autosize,                                                       ! - U-factor times area value of coil (W/K)
@@ -317,7 +352,7 @@ Branch,
   {0} DOAS Heating Coil Water Inlet Node,                         ! - Component 1 inlet node name
   {0} DOAS Heating Coil Water Outlet Node;                        ! - Component 1 outlet node name
 
- Controller:WaterCoil,
+Controller:WaterCoil,
   {0} DOAS Cooling Coil Controller,                               ! - Controller name
   Temperature,                                                    ! - Control variable
   Reverse,                                                        ! - Control action
@@ -346,60 +381,73 @@ AirLoopHVAC:ControllerList,
   Controller:WaterCoil,
   {0} DOAS Heating Coil Controller;";
 
-         return String.Format(idfObjects, this.Name, airLoopCount, airLoops, airLoopOutlets, airLoopInlets, this.SupplyTemperature, this.ChwBranchName, this.HwBranchName);
-      }
-   }
+            return String.Format(
+               idfObjects,
+               this.Name,
+               airLoopCount,
+               airLoops,
+               airLoopOutlets,
+               airLoopInlets,
+               this.SupplyTemperature,
+               this.ChwBranchName,
+               this.HwBranchName
+            );
+        }
+    }
 
-   public class DoasIdfHandler
-   {
-      public IdfReader Reader;
+    public class DoasIdfHandler
+    {
+        public IdfReader Reader;
 
-      public DoasIdfHandler() { }
+        public DoasIdfHandler() { }
 
-      public DoasIdfHandler(IdfReader idfReader)
-      {
-         Reader = idfReader;
-      }
+        public DoasIdfHandler(IdfReader idfReader)
+        {
+            Reader = idfReader;
+        }
 
-      public IdfObject FindObject(string objectType, string objectName)
-      {
-         try
-         {
-            return this.Reader[objectType].First(c => c[0] == objectName);
-         }
-         catch (Exception e)
-         {
-            throw new Exception(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
-         }
-      }
+        public IdfObject FindObject(string objectType, string objectName)
+        {
+            try
+            {
+                return this.Reader[objectType].First(c => c[0] == objectName);
+            }
+            catch (Exception)
+            {
+                throw new Exception(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
+            }
+        }
 
-      private void AddBranch(string loopName, string branchName)
-      {
-         IdfObject branchList = FindObject("branchList", loopName + " Demand Side Branches");
-         branchList.InsertField(branchList.Count - 1, branchName);
+        private void AddBranch(string loopName, string branchName)
+        {
+            IdfObject branchList = FindObject("branchList", loopName + " Demand Side Branches");
+            branchList.InsertField(branchList.Count - 1, branchName);
 
-         IdfObject splitter = FindObject("Connector:Splitter", loopName + " Demand Splitter");
-         splitter.InsertField(splitter.Count - 1, branchName);
+            IdfObject splitter = FindObject("Connector:Splitter", loopName + " Demand Splitter");
+            splitter.InsertField(splitter.Count - 1, branchName);
 
-         IdfObject mixer = FindObject("Connector:Mixer", loopName + " Demand Mixer");
-         mixer.InsertField(mixer.Count - 1, branchName);
-      }
+            IdfObject mixer = FindObject("Connector:Mixer", loopName + " Demand Mixer");
+            mixer.InsertField(mixer.Count - 1, branchName);
+        }
 
-      public void LoadDoas(DoasSpecs doasSpecs)
-      {
-         string doasIdfObjects = doasSpecs.GetIDFObjects();
-         this.Reader.Load(doasIdfObjects);
+        public void LoadDoas(DoasSpecs doasSpecs)
+        {
+            // Inject all DOAS-related objects (schedules, OA system, coils, controllers, branches, etc.)
+            string doasIdfObjects = doasSpecs.GetIDFObjects();
+            this.Reader.Load(doasIdfObjects);
 
-         AddBranch(doasSpecs.HwLoopName, doasSpecs.HwBranchName);
-         AddBranch(doasSpecs.ChwLoopName, doasSpecs.ChwBranchName);
+            // Add the DOAS coil branches to the HW/CHW demand sides
+            AddBranch(doasSpecs.HwLoopName, doasSpecs.HwBranchName);
+            AddBranch(doasSpecs.ChwLoopName, doasSpecs.ChwBranchName);
 
-         if (!doasSpecs.IncludeHX)
-         {
-            IdfObject hx = FindObject("HeatExchanger:AirToAir:SensibleAndLatent", doasSpecs.HxName);
-            hx[1].Value = doasSpecs.OffScheduleName;
-         }
+            // If HX is not required, disable it by assigning an always-off availability schedule.
+            if (!doasSpecs.IncludeHX)
+            {
+                IdfObject hx = FindObject("HeatExchanger:AirToAir:SensibleAndLatent", doasSpecs.HxName);
+                hx[1].Value = doasSpecs.OffScheduleName;
+            }
 
-         this.Reader.Save();
-      }
-   }
+            this.Reader.Save();
+        }
+    }
 }
