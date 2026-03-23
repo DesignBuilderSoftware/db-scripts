@@ -66,7 +66,7 @@ namespace DB.Extensibility.Scripts
             string chwPlantLoopName = "CHW Loop"; // specify chw loop connected to the central DOAS cooling coil
             string hwPlantLoopName = "HW Loop";   // specify hw loop connected to the central DOAS heating coil
             string doasName = "DOAS1"; // DOAS name prefix (used to generate object names in the injected IDF)
-            double supplyAirTemperatureC = 17.5; // Constant DOAS supply air temperature setpoint [°C]
+            double supplyAirTemperatureC = 17.5; // Constant DOAS supply air temperature setpoint [Â°C]
             bool includeHeatRecoveryHx = true; // If false, the heat exchanger object remains but is disabled using an always-off schedule
 
             DoasSpecs doas1 = new DoasSpecs(doasName, childAirLoops, hwPlantLoopName, chwPlantLoopName, includeHeatRecoveryHx, supplyAirTemperatureC);
@@ -112,8 +112,8 @@ namespace DB.Extensibility.Scripts
             string text = @"DOAS: {0}
 HW loop: {1}
 CHW loop: {2}
-HX included: {3}
-Supply temperature: {4}
+Heat recovery enabled: {3}
+Supply temperature [C]: {4}
 Child air loops:
 - {5}";
             return string.Format(text, this.Name, this.HwLoopName, this.ChwLoopName, this.IncludeHX, this.SupplyTemperature, childLoopNames);
@@ -246,7 +246,7 @@ AirLoopHVAC:DedicatedOutdoorAirSystem,
    {5},                                                           !- Precool Design Temperature C
    0.008,                                                         !- Precool Design Humidity Ratio kgWater/kgDryAir
    {1},                                                           !- Number of AirLoopHVAC
-   {2};                                                           ! Air loop names (must be ALL CAPS)
+   {2};                                                           !- Air loop names (E+9.4 expects ALL CAPS)
 
 
 !-   ===========  ALL OBJECTS IN CLASS: AIRLOOPHVAC:MIXER ===========
@@ -276,7 +276,7 @@ OutdoorAir:NodeList,
 
 AvailabilityManager:Scheduled,
    {0} OA Sys Avail,                                              !- Name
-   {0} Always_ON;                                                 !- Schedule Name
+   {0} ALWAYS_ON;                                                 !- Schedule Name
 
 
 !-   ===========  ALL OBJECTS IN CLASS: AVAILABILITYMANAGERASSIGNMENTLIST ===========
@@ -284,7 +284,7 @@ AvailabilityManager:Scheduled,
 AvailabilityManagerAssignmentList,
    {0} OA Sys Avail List,                                         !- Name
    AvailabilityManager:Scheduled,                                 !- Availability Manager 1 Object Type
-   {0} OA SysAvail;                                               !- Availability Manager 1 Name
+   {0} OA Sys Avail;                                              !- Availability Manager 1 Name
 
 
 !-   ===========  ALL OBJECTS IN CLASS: SETPOINTMANAGER:SCHEDULED ===========
@@ -337,12 +337,12 @@ Coil:Heating:Water,
   0.50;                                                           ! - Rated ratio for air and water convection
 
 Branch,
-  {6},                                                            ! - Branch name
-  ,                                                               ! - Pressure drop curve name
-  Coil:Cooling:Water,                                             ! - Component 1 object type
-  {0} DOAS CHW Cooling Coil,                                      ! - Component 1 name
-  {0} DOAS Cooling Coil Water Inlet Node,                         ! - Component 1 inlet node name
-  {0} DOAS Cooling Coil Water Outlet Node;                        ! - Component 1 outlet node name
+  {6},                                                            !- Branch name
+  ,                                                               !- Pressure drop curve name
+  Coil:Cooling:Water,                                             !- Component 1 object type
+  {0} DOAS CHW Cooling Coil,                                      !- Component 1 name
+  {0} DOAS Cooling Coil Water Inlet Node,                         !- Component 1 inlet node name
+  {0} DOAS Cooling Coil Water Outlet Node;                        !- Component 1 outlet node name
 
 Branch,
   {7},                                                            ! - Branch name
@@ -364,15 +364,15 @@ Controller:WaterCoil,
   0.000000;                                                       ! - Minimum actuated flow (m3/s)
 
 Controller:WaterCoil,
-  {0} DOAS Heating Coil Controller,                               ! - Controller name
-  Temperature,                                                    ! - Control variable
-  Normal,                                                         ! - Control action
-  Flow,                                                           ! - Actuator variable
-  {0} DOAS Heating Coil Air Outlet Node,                          ! - Sensor node name
-  {0} DOAS Heating Coil Water Inlet Node,                         ! - Actuator node name
-  autosize,                                                       ! - Controller convergence tolerance
-  autosize,                                                       ! - Maximum actuated flow (m3/s)
-  0.000000;                                                       ! - Minimum actuated flow (m3/s)
+  {0} DOAS Heating Coil Controller,                               !- Controller name
+  Temperature,                                                    !- Control variable
+  Normal,                                                         !- Control action
+  Flow,                                                           !- Actuator variable
+  {0} DOAS Heating Coil Air Outlet Node,                          !- Sensor node name
+  {0} DOAS Heating Coil Water Inlet Node,                         !- Actuator node name
+  autosize,                                                       !- Controller convergence tolerance
+  autosize,                                                       !- Maximum actuated flow (m3/s)
+  0.000000;                                                       !- Minimum actuated flow (m3/s)
 
 AirLoopHVAC:ControllerList,
   {0} OA Sys Controllers,
