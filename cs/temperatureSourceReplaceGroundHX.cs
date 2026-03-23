@@ -1,8 +1,30 @@
 /*
-Replace "GroundHeatExchanger:System" with "PlantComponent:TemperatureSource".
+Replace Ground Heat Exchanger of type System with Plant Temperature Source component
 
-Object name needs to reference the GroundHeatExchanger:System object name.
-Attributes can be set in 'boilerplate' IDF text below.
+Purpose:
+This DesignBuilder C# script replaces "GroundHeatExchanger:System" with "PlantComponent:TemperatureSource".
+This object used to simulate systems with a known supply temperature (e.g., rivers, wells, and other configurations where a known temperature is pumped back into the plant system).
+
+Main Steps:
+1) Finds a placeholder GroundHeatExchanger:System object by name
+2) Replaces references to that GroundHeatExchanger:System object in PlantEquipmentList and Branch
+3) Creates a PlantComponent:TemperatureSource object using:
+   - The same object name as the placeholder GroundHeatExchanger:System object
+   - The inlet/outlet nodes taken from the GroundHeatExchanger:System object
+   - A constant source temperature defined in this script
+4) Removes the original GroundHeatExchanger:System object and saves the updated IDF
+
+How to Use:
+
+Configuration
+- Set 'objectName' to the Name of the GroundHeatExchanger:System placeholder you want to convert.
+- Set 'sourceTemperatureC' to the desired constant temperature in °C.
+
+Prerequisites / Placeholders
+- The base model must contain a GroundHeatExchanger:System placeholder object.
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Collections.Generic;
@@ -17,7 +39,7 @@ namespace DB.Extensibility.Scripts
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-
+        // IDF template for the new PlantComponent:TemperatureSource object.
         string boilerplate = @"
 PlantComponent:TemperatureSource,
       {0},                     !- Name
@@ -33,7 +55,13 @@ PlantComponent:TemperatureSource,
             return idfReader[objectType].First(o => o[0] == objectName);
         }
 
-        private void ReplaceObjectTypeInList(IdfReader idfReader, string listName, string oldObjectType, string oldObjectName, string newObjectType, string newObjectName)
+        private void ReplaceObjectTypeInList(
+            IdfReader idfReader,
+            string listName,
+            string oldObjectType,
+            string oldObjectName,
+            string newObjectType,
+            string newObjectName)
         {
             IEnumerable<IdfObject> allEquipment = idfReader[listName];
 
@@ -59,9 +87,13 @@ PlantComponent:TemperatureSource,
                 ApiEnvironment.EnergyPlusInputIdfPath,
                 ApiEnvironment.EnergyPlusInputIddPath
             );
+
+            // USER CONFIGURATION: Name of the placeholder GroundHeatExchanger:System object to replace
             string objectName = "TemperatureSource";
             string oldObjectType = "GroundHeatExchanger:System";
             string newObjectType = "PlantComponent:TemperatureSource";
+
+            // USER CONFIGURATION: Constant temperature to apply for PlantComponent:TemperatureSource
             int temperature = 10;
 
             IdfObject groundHX = FindObject(idfReader, oldObjectType, objectName);
@@ -79,8 +111,10 @@ PlantComponent:TemperatureSource,
             idfReader.Remove(responseFactors);
             idfReader.Remove(properties);
 
+            // Build the replacement object IDF text
             string temperatureSource = String.Format(boilerplate, objectName, inletNode, outletNode, temperature);
 
+            // Replace the placeholder object with the new component and save the modified IDF
             idfReader.Load(temperatureSource);
             idfReader.Save();
         }

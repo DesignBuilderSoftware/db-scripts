@@ -1,23 +1,46 @@
 /*
-Add HeatExchanger:Desiccant:BalancedFlow object into air handling unit.
+Add Desiccant Dehumidifier (of type Balanced Flow) to an AHU branch
 
-The component is added at the specified index to the "DesiccantDehumidifier" air loop (the air loop name needs to match).
+Purpose:
+This DesignBuilder C# script inserts an EnergyPlus HeatExchanger:Desiccant:BalancedFlow component into an existing air loop supply branch.
 
+Main Steps:
+1) Locate the AHU main supply Branch for a given air loop
+2) Determine the process-side inlet node from the branch field list at the chosen insertion point
+3) Create a new process outlet node name and rewire the downstream component to use it
+4) Insert a HeatExchanger:Desiccant:BalancedFlow component into the Branch (type/name/inlet/outlet)
+5) Add the HeatExchanger:Desiccant:BalancedFlow object plus its PerformanceDataType1 object to the IDF
+6) Save the modified IDF
+
+How to Use:
+
+Configuration
+- insertAtBranchFieldIndex refers to the Branch field list ordering. In a Branch, components are stored in repeated quads:
+    (Component 1 Object Type, Component 1 Name, Component 1 Inlet Node, Component 1 Outlet Node,
+     Component 2 Object Type, Component 2 Name, Component 2 Inlet Node, Component 2 Outlet Node, ...)
+  This script:
+   - Uses (insertAtBranchFieldIndex - 1) to read the process inlet node from the existing branch fields
+   - Inserts a new quad at insertAtBranchFieldIndex
+   - Updates downstream component inlet node and branch outlet-node field using fixed offsets
+
+Prerequisites / Placeholders
+This script expects an Air Loop to be in place in the model, listed in the USER CONFIGURATION SECTION.
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
-using System.Runtime;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Forms;
-using DB.Extensibility.Contracts;
+
 using System;
+using System.Linq;
+using DB.Extensibility.Contracts;
 using EpNet;
 
 namespace DB.Extensibility.Scripts
-
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-        string desiccantHxBoilerplate = @"     
+        // IDF text template: creates the desiccant HX object and a matching performance object (HXDesPerf1).
+        private readonly string desiccantHxAndPerfIdfTemplate = @"
 HeatExchanger:Desiccant:BalancedFlow,
     {0},                                                       !- Name
     ON 24/7,                                                   !- Availability Schedule Name
@@ -82,15 +105,15 @@ HeatExchanger:Desiccant:BalancedFlow:PerformanceDataType1,
     70.0,                    !- Minimum Process Inlet Air Relative Humidity for Humidity Ratio Equation percent
     100.0;                   !- Maximum Process Inlet Air Relative Humidity for Humidity Ratio Equation percent";
 
-        public IdfObject FindObject(IdfReader reader, string objectType, string objectName)
+        private static IdfObject FindObject(IdfReader reader, string objectType, string objectName)
         {
             try
             {
                 return reader[objectType].First(c => c[0] == objectName);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw new Exception(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
+                throw new Exception(string.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
             }
         }
 
@@ -100,40 +123,55 @@ HeatExchanger:Desiccant:BalancedFlow:PerformanceDataType1,
                 ApiEnvironment.EnergyPlusInputIdfPath,
                 ApiEnvironment.EnergyPlusInputIddPath);
 
-            string ahuName = "Air Loop";    // specify air loop name
-            int dehumidfierBranchIndex = 18;    // place the component into the nth index in the AHU Main Branch
+            // ---------------------------
+            // USER CONFIGURATION SECTION
+            // ---------------------------
+            string airLoopName = "Air Loop";         // Specify air loop name
+            int insertAtBranchFieldIndex = 18;       // Branch field index where the new component is inserted.
 
-            string desiccantDehumidifierComponent = "HeatExchanger:Desiccant:BalancedFlow";
-            string desiccantDehumidifierName = "Desiccant Unit";
-            string ahuMainBranchName = ahuName + " AHU Main Branch";
+            string desiccantHxObjectType = "HeatExchanger:Desiccant:BalancedFlow";
+            string desiccantHxName = "Desiccant Unit";
+            string mainBranchName = airLoopName + " AHU Main Branch";
 
-            IdfObject ahuMainBranch = FindObject(idfReader, "Branch", ahuMainBranchName);
+            // Locate the Branch that represents the AHU main branch equipment list.
+            IdfObject mainBranch = FindObject(idfReader, "Branch", mainBranchName);
 
+            string processInletNodeName = mainBranch[insertAtBranchFieldIndex - 1].Value;
+            string processOutletNodeName = "Desiccant Process Outlet Node";
 
-            string processInletNode = ahuMainBranch[dehumidfierBranchIndex - 1].Value;
-            string processOutletNode = "Desiccant Process Outlet Node";
+            string existingHrHxName = airLoopName + " AHU Heat Recovery Device";
+            IdfObject existingHeatRecoveryHx =
+                FindObject(idfReader, "HeatExchanger:AirToAir:SensibleAndLatent", existingHrHxName);
 
-            string hxName = ahuName + " AHU Heat Recovery Device";
-            IdfObject heatExchanger = FindObject(idfReader, "HeatExchanger:AirToAir:SensibleAndLatent", hxName);
+            string regenerationInletNodeName = existingHeatRecoveryHx["Exhaust Air Outlet Node Name"].Value; // Return fan inlet node name
+            string regenerationOutletNodeName = "Desiccant Return Outlet Node";
 
-            string regenerationInletNode = heatExchanger["Exhaust Air Outlet Node Name"].Value;    // return fan inlet node name
-            string regenerationOutletNode = "Desiccant Return Outlet Node";
-
-            string nextComponentType = ahuMainBranch[dehumidfierBranchIndex].Value;
-            string nextComponentName = ahuMainBranch[dehumidfierBranchIndex + 1].Value;
+            string nextComponentType = mainBranch[insertAtBranchFieldIndex].Value;
+            string nextComponentName = mainBranch[insertAtBranchFieldIndex + 1].Value;
 
             IdfObject nextComponent = FindObject(idfReader, nextComponentType, nextComponentName);
-            nextComponent["Air Inlet Node Name"].Value = processOutletNode;
-            ahuMainBranch[dehumidfierBranchIndex + 2].Value = processOutletNode;
+            nextComponent["Air Inlet Node Name"].Value = processOutletNodeName;
+            mainBranch[insertAtBranchFieldIndex + 2].Value = processOutletNodeName;
 
-            string[] newBranchFields = new string[] { desiccantDehumidifierComponent, desiccantDehumidifierName, processInletNode, processOutletNode };
+            // Insert new Branch fields as a quad (Object Type, Object Name, Inlet Node, Outlet Node):
+            string[] newBranchFields = new[]
+            {
+                desiccantHxObjectType,
+                desiccantHxName,
+                processInletNodeName,
+                processOutletNodeName
+            };
+            mainBranch.InsertFields(insertAtBranchFieldIndex, newBranchFields);
 
-            ahuMainBranch.InsertFields(dehumidfierBranchIndex, newBranchFields);
+            string desiccantHxIdfText = string.Format(
+                desiccantHxAndPerfIdfTemplate,
+                desiccantHxName,
+                regenerationInletNodeName,
+                regenerationOutletNodeName,
+                processInletNodeName,
+                processOutletNodeName);
 
-            string dehumidifier = String.Format(desiccantHxBoilerplate, desiccantDehumidifierName, regenerationInletNode, regenerationOutletNode, processInletNode, processOutletNode);
-
-            idfReader.Load(dehumidifier);
-
+            idfReader.Load(desiccantHxIdfText);
             idfReader.Save();
         }
     }

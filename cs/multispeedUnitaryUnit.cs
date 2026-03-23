@@ -1,41 +1,40 @@
 ﻿/*
 EnergyPlus Multi-Speed HVAC System Conversion Script
-   This DesignBuilder C# script automatically converts single-speed AirLoopHVAC:UnitarySystem objects to multi-speed systems with discrete fan control.
-   The script executes before EnergyPlus simulation runs and modifies the IDF file by replacing single-speed components with multi-speed equivalents.
+
+Purpose:
+This DesignBuilder C# script automatically converts single-speed AirLoopHVAC:UnitarySystem objects to multi-speed systems with discrete fan control.
+The script executes before EnergyPlus simulation runs and modifies the IDF file by replacing single-speed components with multi-speed equivalents.
    ​   
-   Purpose
-   The script transforms generic unitary air loops into multi-speed systems by:
-   - Converting Fan:VariableVolume to Fan:SystemModel with discrete speed control
-   - Replacing Coil:Cooling:DX:SingleSpeed with Coil:Cooling:DX:MultiSpeed
-   - Adding UnitarySystemPerformance:Multispeed specifications
-   ​
-   Maintaining existing Coil:Heating:Fuel heating coils unchanged
+Main Steps:   
+1) Convert Fan:VariableVolume to Fan:SystemModel with discrete speed control
+2) Replace Coil:Cooling:DX:SingleSpeed with Coil:Cooling:DX:MultiSpeed
+3) Add UnitarySystemPerformance:Multispeed specifications
+Existing Coil:Heating:Fuel heating coils unchanged
 
+How to Use:
 
-   How to Use
-
-   Configuration
-   - Identify target systems: Systems are selected by matching the NameSuffix property (e.g., "10 ton" or "20 ton") at the end of the air loop name
-
-   Configure speed specifications: Modify the TwoSpeedSpecification or FourSpeedSpecification structs in BeforeEnergySimulation() method:
-   - NameSuffix: String identifier at end of system name
-   - HalfSpeedFlowFraction: Air flow rate at 50% speed (2-speed)
-   - HalfSpeedCapacityFraction: Cooling capacity at 50% speed (2-speed)
-   - HalfSpeedFanPowerFraction: Fan power at 50% speed (2-speed)
+Configuration
+- Identify target systems: Systems are selected by matching the NameSuffix property (e.g., "10 ton" or "20 ton") at the end of the air loop name
+Configure speed specifications: Modify the TwoSpeedSpecification or FourSpeedSpecification structs in BeforeEnergySimulation() method:
+- NameSuffix: String identifier at end of system name
+- HalfSpeedFlowFraction: Air flow rate at 50% speed (2-speed)
+- HalfSpeedCapacityFraction: Cooling capacity at 50% speed (2-speed)
+- HalfSpeedFanPowerFraction: Fan power at 50% speed (2-speed)
    
-   - Speed1/2/3FlowFraction: Air flow rates for speeds 1-3 (4-speed)
-   - Speed1/2/3CapacityFraction: Cooling capacities for speeds 1-3 (4-speed)
-   - Speed1/2/3FanPowerFraction: Fan power for speeds 1-3 (4-speed)
+- Speed1/2/3FlowFraction: Air flow rates for speeds 1-3 (4-speed)
+- Speed1/2/3CapacityFraction: Cooling capacities for speeds 1-3 (4-speed)
+- Speed1/2/3FanPowerFraction: Fan power for speeds 1-3 (4-speed)
    
-   Prerequisites
-   Base model must contain AirLoopHVAC:UnitarySystem objects with:
-   - Fan:VariableVolume supply fan
-   - Coil:Cooling:DX:SingleSpeed cooling coil
-   - Coil:Heating:Fuel heating coil
+Prerequisites / Placeholders
+Base model must contain AirLoopHVAC:UnitarySystem objects with:
+- Fan:VariableVolume supply fan
+- Coil:Cooling:DX:SingleSpeed cooling coil
+- Coil:Heating:Fuel heating coil
    
-   Cooling coil must have numeric values for Rated Air Flow Rate and Gross Rated Total Cooling Capacity!
+Cooling coil must have numeric values for Rated Air Flow Rate and Gross Rated Total Cooling Capacity
   
-   DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Runtime;

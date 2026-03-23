@@ -1,25 +1,54 @@
 /*
-Add Coil:Heating:Electric to the air loop return air stream.
+Add Electric Heating Coil to an Air Loop Branch (Return Air Stream)
 
-The script adds the component to air loops specified in "airLoopNames" array.
-Coil parameters and setpoint can be set in the object boilerplate.
+Purpose:
+This DesignBuilder C# script inserts a Coil:Heating:Electric into the air loop branch for selected air loops by editing the EnergyPlus IDF before simulation.
+
+Main Steps:
+For each target air loop name:
+1) Find the corresponding Branch object (following naming convention "<Air Loop Name> AHU Main Branch")
+2) Identify the existing downstream node currently referenced by the branch
+3) Insert a new coil component into the branch equipment list
+4) Add required supporting objects (coil, availability schedule, setpoint schedule, scheduled setpoint manager)
+5) Add a couple of Output:Variable requests
+
+How to Use:
+
+Configuration
+- targetAirLoopNames:
+  - List of air loop names to modify (exact match required).
+- coilAndControlsIdfTemplate:
+  - IDF template injected for each air loop, including:
+    - Coil:Heating:Electric
+    - Schedule:Compact (Availability)
+    - Schedule:Compact (Setpoint)
+    - SetpointManager:Scheduled
+    - Output:Variable entries
+
+Prerequisites / Placeholders
+- Each target air loop must already contain a Branch object named "<Air Loop Name> AHU Main Branch".
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Forms;
-using DB.Extensibility.Contracts;
 using System;
+using System.Linq;
+using DB.Extensibility.Contracts;
 using EpNet;
 
 namespace DB.Extensibility.Scripts
-
 {
-    public class IdfFindAndReplace : ScriptBase, IScript
+    public class AddElectricHeatingCoilToAirLoopBranch : ScriptBase, IScript
     {
-        string[] airLoopNames = new string[] { "Air Loop" };
+        // Configure which air loops to modify (names must match the model exactly)
+        private readonly string[] targetAirLoopNames = new string[] { "Air Loop" };
 
-        string coilBoilerPlate = @"
+        // IDF template injected per air loop:
+        // {0} = coil name
+        // {1} = coil inlet node name
+        // {2} = coil outlet node name (also used as setpoint node)
+        private readonly string coilAndControlsIdfTemplate = @"
 Coil:Heating:Electric,
   {0},                          !- Name
   {0} Availability,             !- Availability Schedule Name
@@ -52,41 +81,50 @@ SetpointManager:Scheduled,
   {2};                          !- Setpoint Node or NodeList Name
 
 Output:Variable, {0}, Heating Coil Electricity Rate, Hourly;
-Output:Variable, {2}, System Node Temperature, Hourly;";
+Output:Variable, {2}, System Node Temperature, Hourly;
+";
 
-
-        private IdfObject FindObject(IdfReader idfReader, string objectType, string objectName)
+        // Helper: Find a single IDF object by type + name (name is typically field 0)
+        private IdfObject FindObjectByName(IdfReader idf, string objectType, string objectName)
         {
-            return idfReader[objectType].First(o => o[0] == objectName);
+            return idf[objectType].First(o => o[0] == objectName);
         }
 
         public override void BeforeEnergySimulation()
         {
-            IdfReader idfReader = new IdfReader(
-              ApiEnvironment.EnergyPlusInputIdfPath,
-              ApiEnvironment.EnergyPlusInputIddPath
-              );
+            IdfReader idf = new IdfReader(
+                ApiEnvironment.EnergyPlusInputIdfPath,
+                ApiEnvironment.EnergyPlusInputIddPath
+            );
 
-
-            foreach (string airLoopName in airLoopNames)
+            foreach (string airLoopName in targetAirLoopNames)
             {
-                string branchName = airLoopName + " AHU Main Branch";
-                IdfObject branch = FindObject(idfReader, "Branch", branchName);
+                string mainBranchName = airLoopName + " AHU Main Branch";
+                IdfObject mainBranch = FindObjectByName(idf, "Branch", mainBranchName);
 
                 string coilName = airLoopName + " AHU Regeneration Coil";
-                string coilInletNode = branch[4].Value;
+                // Assumption: branch[4] is the node currently used downstream in the branch definition.
+                // Preserve it as the coil inlet node, then replace branch[4] with the new coil outlet node.
+                string coilInletNode = mainBranch[4].Value;
                 string coilOutletNode = airLoopName + " AHU Regeneration Coil Outlet Node";
 
-                branch[4].Value = coilOutletNode;
+                mainBranch[4].Value = coilOutletNode;
 
-                string[] newFields = new string[] { "Coil:Heating:Electric", coilName, coilInletNode, coilOutletNode };
-                branch.InsertFields(2, newFields);
+                // Insert the new coil into the branch equipment list.
+                string[] newBranchFields = new string[]
+                {
+                    "Coil:Heating:Electric",
+                    coilName,
+                    coilInletNode,
+                    coilOutletNode
+                };
+                mainBranch.InsertFields(2, newBranchFields);
 
-                string coil = String.Format(coilBoilerPlate, coilName, coilInletNode, coilOutletNode);
-
-                idfReader.Load(coil);
+                string idfTextToLoad = String.Format(coilAndControlsIdfTemplate, coilName, coilInletNode, coilOutletNode);
+                idf.Load(idfTextToLoad);
             }
-            idfReader.Save();
+
+            idf.Save();
         }
     }
 }

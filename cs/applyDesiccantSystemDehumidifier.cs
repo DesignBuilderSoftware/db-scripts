@@ -1,27 +1,54 @@
 /*
-Add Dehumidifier:Desiccant:System object into air handling unit.
+Add Desiccant Dehumidifier (type System) to an AirLoopHVAC main branch.
 
+Purpose:
+This DesignBuilder C# script inserts a Dehumidifier:Desiccant:System downstream of a DX cooling coil (Coilsystem:Cooling:DX) in an AHU main branch. 
+It also loads the supporting heat exchanger, fan, curves, outdoor air nodes, schedule, and humidity setpoint manager objects.
+
+Main Steps:
+1) Find the target branch based on AHU name.
+2) Locate the CoilSystem:Cooling:DX on that branch and resolve the referenced cooling coil object.
+3) Re-wire nodes so the dehumidifier sits downstream of the DX coil system on the branch:
+   - If DX coil system is the last component: append dehumidifier at end of branch.
+   - If not last: insert dehumidifier and update the next component’s inlet node.
+4) Load the required boilerplate IDF text blocks (dehumidifier, HX, fan, curves, schedule, OA nodes, setpoint manager)
+   and load the HX performance data.
+
+How to Use:
+
+Configuration
+Defined in the AddDesiccantDehumidifierToAirLoop():
+- airLoopName: Must match the model's IDF naming.
+
+Prerequisites / Placeholders
+This script expects an Air Loop to be in place in the model defined in AddDesiccantDehumidifierToAirLoop().
 The component is meant to be used in conjunction with a DX cooling coil.
 The script looks up a DX coil coil and places the dehumidifer downstream of the coil.
 
-The AddDesiccantDehumidifier method requires the following parameters:
-    - air loop name
-
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
-using System.Runtime;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime;
 using System.Windows.Forms;
+
 using DB.Extensibility.Contracts;
-using System;
 using EpNet;
 
 namespace DB.Extensibility.Scripts
-
 {
-    public class IdfFindAndReplace : ScriptBase, IScript
+    public class AddDesiccantDehumidifier : ScriptBase, IScript
     {
-        string dehumidifierBoilerplate = @"  
+        // IDF template that defines:
+        // - Dehumidifier:Desiccant:System
+        // - HeatExchanger:Desiccant:BalancedFlow
+        // - Fan:SystemModel + curves
+        // - OutdoorAir:Node placeholders
+        // - Schedule + SetpointManager:MultiZone:Humidity:Maximum
+        private readonly string dehumidifierIdfTemplate = @"  
 Dehumidifier:Desiccant:System,
     {0} Desiccant Dehumidifier,!- Name
     {0} Dehumidifier Schedule, !- Availability Schedule Name
@@ -109,7 +136,8 @@ SetpointManager:MultiZone:Humidity:Maximum,
    .012,                                                ! - Maximum setpoint humidity ratio (kg/kg)
    {2};                                                 ! - Setpoint node list";
 
-        string desiccantHeatExchangerPerf = @"
+        // Performance data required by HeatExchanger:Desiccant:BalancedFlow
+        private readonly string hxPerformanceDataIdf = @"
 HeatExchanger:Desiccant:BalancedFlow:PerformanceDataType1,
     HXDesPerf1,              !- Name
     1.05,                    !- Nominal Air Flow Rate {m3/s}
@@ -166,81 +194,110 @@ HeatExchanger:Desiccant:BalancedFlow:PerformanceDataType1,
 
         public override void BeforeEnergySimulation()
         {
-            IdfReader idfReader = new IdfReader(
+            IdfReader idf = new IdfReader(
                 ApiEnvironment.EnergyPlusInputIdfPath,
                 ApiEnvironment.EnergyPlusInputIddPath);
 
-            AddDesiccantDehumidifier(idfReader, "Air Loop");
-            idfReader.Load(desiccantHeatExchangerPerf);
+            // ----------------------------
+            // USER CONFIGURATION SECTION
+            // ----------------------------
+            // Target air loop name must match the AirLoopHVAC name in the IDF.
+            AddDesiccantDehumidifierToAirLoop(idf, "Air Loop");
+            idf.Load(hxPerformanceDataIdf);
 
-            idfReader.Save();
+            idf.Save();
         }
 
-        public void AddDesiccantDehumidifier(IdfReader idfReader, string airLoopName)
+        public void AddDesiccantDehumidifierToAirLoop(IdfReader idf, string airLoopName)
         {
-            string desiccantDehumidifierComponent = "Dehumidifier:Desiccant:System";
+            const string dehumidifierObjectType = "Dehumidifier:Desiccant:System";
+
             string ahuMainBranchName = airLoopName + " AHU Main Branch";
+            IdfObject ahuMainBranch = FindObject(idf, "Branch", ahuMainBranchName);
 
-            IdfObject ahuMainBranch = FindObject(idfReader, "Branch", ahuMainBranchName);
-
-            int dxCoilSystemIndex = FindDxCoilSystemIndex(ahuMainBranch);
-            if (dxCoilSystemIndex < 0)
+            // Locate CoilSystem:Cooling:DX in the Branch object fields.
+            int dxCoolingCoilSystemFieldIndex = FindDxCoilSystemIndex(ahuMainBranch);
+            if (dxCoolingCoilSystemFieldIndex < 0)
             {
-                throw new Exception("Cannot find DX coil in the AHU main branch.");
+                throw new Exception("Cannot find DX coil (CoilSystem:Cooling:DX) in the AHU main branch.");
             }
 
-            string dxCoilSystemType = ahuMainBranch[dxCoilSystemIndex].Value;
-            string dxCoilSystemName = ahuMainBranch[dxCoilSystemIndex + 1].Value;
+            string dxCoilSystemType = ahuMainBranch[dxCoolingCoilSystemFieldIndex].Value;
+            string dxCoilSystemName = ahuMainBranch[dxCoolingCoilSystemFieldIndex + 1].Value;
 
-            IdfObject dxCoilSystem = FindObject(idfReader, dxCoilSystemType, dxCoilSystemName);
+            IdfObject dxCoilSystem = FindObject(idf, dxCoilSystemType, dxCoilSystemName);
             string dxCoilType = dxCoilSystem["Cooling Coil Object Type"].Value;
             string dxCoilName = dxCoilSystem["Cooling Coil Name"].Value;
 
-            IdfObject dxCoil = FindObject(idfReader, dxCoilType, dxCoilName);
+            IdfObject dxCoil = FindObject(idf, dxCoilType, dxCoilName);
             dxCoil["Condenser Air Inlet Node Name"].Value = airLoopName + " Outside Air Inlet Node 2";
 
-            // update component nodes
-            string processInletNode = "";
-            string processOutletNode = "";
+            // Nodes between DX coil and dehumidifier:
+            // - processInletNode = dehumidifier process inlet (downstream of DX coil outlet)
+            // - processOutletNode = dehumidifier process outlet (upstream of next component or branch outlet)
+            string processInletNode;
+            string processOutletNode;
 
-            int nextComponentIndex = dxCoilSystemIndex + 4;
-            bool isLastComponent = nextComponentIndex == ahuMainBranch.Count;
-            if (isLastComponent)
+            int nextComponentFieldIndex = dxCoolingCoilSystemFieldIndex + 4;
+            bool isDxCoilSystemLastOnBranch = nextComponentFieldIndex == ahuMainBranch.Count;
+
+            if (isDxCoilSystemLastOnBranch)
             {
-                // update nodes
+                // DX system is last: append dehumidifier and connect its outlet to the branch outlet node.
                 processInletNode = airLoopName + " Desiccant Process Inlet Node";
                 processOutletNode = ahuMainBranch[ahuMainBranch.Count - 1].Value;
-                ahuMainBranch[dxCoilSystemIndex + 3].Value = processInletNode;
+                ahuMainBranch[dxCoolingCoilSystemFieldIndex + 3].Value = processInletNode;
 
                 dxCoilSystem["DX Cooling Coil System Outlet Node Name"].Value = processInletNode;
                 dxCoil["Air Outlet Node Name"].Value = processInletNode;
 
-                // append dehumidifier component into AHU main branch
-                string[] newBranchFields = new string[] { desiccantDehumidifierComponent, airLoopName + " Desiccant Dehumidifier", processInletNode, processOutletNode };
+                // Append dehumidifier as a new component group in the branch.
+                string[] newBranchFields = new string[]
+                {
+                    dehumidifierObjectType,
+                    airLoopName + " Desiccant Dehumidifier",
+                    processInletNode,
+                    processOutletNode
+                };
                 ahuMainBranch.AddFields(newBranchFields);
             }
             else
             {
-                processInletNode = ahuMainBranch[dxCoilSystemIndex + 3].Value;
+                // DX system is not last: insert dehumidifier and re-wire the next component inlet.
+                processInletNode = ahuMainBranch[dxCoolingCoilSystemFieldIndex + 3].Value;
                 processOutletNode = airLoopName + " Desiccant Process Outlet Node";
 
-                // find the next component
-                string nextComponentType = ahuMainBranch[nextComponentIndex].Value;
-                string nextComponentName = ahuMainBranch[nextComponentIndex + 1].Value;
+                // Identify the next component so we can update its inlet node to the dehumidifier outlet.
+                string nextComponentType = ahuMainBranch[nextComponentFieldIndex].Value;
+                string nextComponentName = ahuMainBranch[nextComponentFieldIndex + 1].Value;
 
-                // update nodes
-                IdfObject nextComponent = FindObject(idfReader, nextComponentType, nextComponentName);
+                IdfObject nextComponent = FindObject(idf, nextComponentType, nextComponentName);
                 nextComponent["Air Inlet Node Name"].Value = processOutletNode;
-                ahuMainBranch[nextComponentIndex + 2].Value = processOutletNode;
 
-                // insert dehumidifier component into AHU main branch
-                string[] newBranchFields = new string[] { desiccantDehumidifierComponent, airLoopName + " Desiccant Dehumidifier", processInletNode, processOutletNode };
-                ahuMainBranch.InsertFields(nextComponentIndex, newBranchFields);
+                // Update the branch’s “inlet node” field for the next component group.
+                ahuMainBranch[nextComponentFieldIndex + 2].Value = processOutletNode;
+
+                // Insert dehumidifier component group before the next component group.
+                string[] newBranchFields = new string[]
+                {
+                    dehumidifierObjectType,
+                    airLoopName + " Desiccant Dehumidifier",
+                    processInletNode,
+                    processOutletNode
+                };
+                ahuMainBranch.InsertFields(nextComponentFieldIndex, newBranchFields);
             }
 
-            // create object idf content
-            string dehumidifier = String.Format(dehumidifierBoilerplate, airLoopName, processInletNode, processOutletNode, dxCoilType, dxCoilName);
-            idfReader.Load(dehumidifier);
+            // Load the dehumidifier + associated objects into the IDF.
+            string dehumidifierIdf = String.Format(
+                dehumidifierIdfTemplate,
+                airLoopName,
+                processInletNode,
+                processOutletNode,
+                dxCoilType,
+                dxCoilName);
+
+            idf.Load(dehumidifierIdf);
         }
 
         public IdfObject FindObject(IdfReader reader, string objectType, string objectName)
@@ -249,7 +306,7 @@ HeatExchanger:Desiccant:BalancedFlow:PerformanceDataType1,
             {
                 return reader[objectType].First(c => c[0] == objectName);
             }
-            catch (Exception e)
+            catch
             {
                 throw new Exception(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
             }
@@ -257,6 +314,7 @@ HeatExchanger:Desiccant:BalancedFlow:PerformanceDataType1,
 
         private int FindDxCoilSystemIndex(IdfObject mainBranch)
         {
+            // Search across Branch fields for a CoilSystem:Cooling:DX entry.
             for (int i = 2; i < mainBranch.Count; i += 1)
             {
                 if (mainBranch[i].Value.Equals("CoilSystem:Cooling:DX", StringComparison.OrdinalIgnoreCase))

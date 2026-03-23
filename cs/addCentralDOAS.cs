@@ -1,35 +1,41 @@
 /*
 Central Dedicated Outdoor Air System (DOAS) Injection Script
 
-This DesignBuilder C# script adds a central Dedicated Outdoor Air System (DOAS) that delivers outdoor air to one or more existing air loops.
+Purpose:
+This DesignBuilder C# script adds a central Dedicated Outdoor Air System (DOAS) that delivers outdoor air to one or more specified air loops.
+The DOAS is created as an EnergyPlus AirLoopHVAC:DedicatedOutdoorAirSystem and includes:
+- Chilled water cooling coil (Coil:Cooling:Water)
+- Hot water heating coil (Coil:Heating:Water)
+- Supply fan (Fan:SystemModel)
+- Optional heat recovery heat exchanger (HeatExchanger:AirToAir:SensibleAndLatent)
 
-Purpose
-The script adds a central DOAS which includes:
-- A chilled water cooling coil (Coil:Cooling:Water)
-- A hot water heating coil (Coil:Heating:Water)
-- An optional heat recovery heat exchanger (HeatExchanger:AirToAir:SensibleAndLatent)
+Main Steps:
+1) Generate all required DOAS objects from the DoasSpecs configuration (schedules, OA system, coils, setpoint managers, etc.).
+2) Insert the generated IDF objects into the model.
+3) Connect the DOAS coil water-side branches to the specified CHW/HW plant loops (demand side).
+4) If heat recovery is disabled, keep the HX object but switch it OFF via its availability schedule.
 
-How to Use
+How to Use:
 
-- Configure the DOAS in BeforeEnergySimulation() by setting:
-  - targetAirLoopNames: List of air loop names that receive outdoor air from the DOAS
-  - hotWaterPlantLoopName: Name of the HW plant loop to serve the DOAS heating coil
-  - chilledWaterPlantLoopName: Name of the CHW plant loop to serve the DOAS cooling coil
-  - doasName: Base name used to create all DOAS object names
-  - doasSupplyAirTempC: Constant supply air temperature setpoint [°C] (used for DOAS supply temp schedule)
-  - enableHeatRecovery: true = HX active, false = HX forced off via schedule
+Configuration
+- Name: DOAS system name prefix used to create all related object names.
+- ChildAirLoops: List of air loop names served by the DOAS in ALL CAPS (these are referenced in AirLoopHVAC:DedicatedOutdoorAirSystem).
+- HwLoopName / ChwLoopName: Plant loop names used to connect the DOAS heating/cooling coil demand branches.
+- IncludeHX: If false, the HX remains in the IDF but is disabled by setting its Availability Schedule to an always-off schedule.
+- SupplyTemperature: Constant supply air setpoint used by scheduled setpoint managers.
+NOTE: E+9.4 requires air loop names to be in ALL CAPS.
 
-Prerequisites
+Prerequisites / Placeholders
+- A CHW plant loop and HW plant loop must already exist with names matching ChwLoopName and HwLoopName.
+- Each plant loop must include (on the demand side):
+  - A BranchList named: "<LoopName> Demand Side Branches"
+  - A Connector:Splitter named: "<LoopName> Demand Splitter"
+  - A Connector:Mixer named: "<LoopName> Demand Mixer"
+- The target air loops referenced in ChildAirLoops must exist and be spelled exactly as in the IDF.
+  Note: some workflows require air loop names in ALL CAPS (as mentioned in the original script header).
 
-A) Plant loop objects must exist for BOTH the HW and CHW loops referenced in the configuration. The script expects:
-   - BranchList named: "<Loop Name> Demand Side Branches"
-   - Connector:Splitter named: "<Loop Name> Demand Splitter"
-   - Connector:Mixer named: "<Loop Name> Demand Mixer"
-
-B) Child air loop names must match the names in the IDF.
-   IMPORTANT: EnergyPlus 9.4 requires air loop names referenced by AirLoopHVAC:DedicatedOutdoorAirSystem to be ALL CAPS.
-
-DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;
@@ -41,52 +47,33 @@ using EpNet;
 
 namespace DB.Extensibility.Scripts
 {
-    public class AddCentralDoasToAirLoops : ScriptBase, IScript
+    public class IdfFindAndReplace : ScriptBase, IScript
     {
         public override void BeforeEnergySimulation()
         {
-            IdfReader idfReader = new IdfReader(
+            IdfReader idf = new IdfReader(
                 ApiEnvironment.EnergyPlusInputIdfPath,
                 ApiEnvironment.EnergyPlusInputIddPath
             );
 
-            DoasIdfHandler doasIdfHandler = new DoasIdfHandler(idfReader);
+            DoasIdfHandler doasIdfHandler = new DoasIdfHandler(idf);
 
-            // ----------------------------
+            // ---------------------------
             // USER CONFIGURATION SECTION
-            // ----------------------------
+            // ---------------------------
 
-            // Air loops connected to the central DOAS (E+ 9.4 requires these names to be ALL CAPS)
-            List<string> targetAirLoopNames = new List<string> { "AIRLOOP1" };
+            List<string> childAirLoops = new List<string> { "AIRLOOP1" }; // Specify air loops connected to the central DOAS
+            string chwPlantLoopName = "CHW Loop"; // specify chw loop connected to the central DOAS cooling coil
+            string hwPlantLoopName = "HW Loop";   // specify hw loop connected to the central DOAS heating coil
+            string doasName = "DOAS1"; // DOAS name prefix (used to generate object names in the injected IDF)
+            double supplyAirTemperatureC = 17.5; // Constant DOAS supply air temperature setpoint [Â°C]
+            bool includeHeatRecoveryHx = true; // If false, the heat exchanger object remains but is disabled using an always-off schedule
 
-            // Plant loop names that serve the DOAS coils (must exist in the base model)
-            string chilledWaterPlantLoopName = "CHW Loop";
-            string hotWaterPlantLoopName = "HW Loop";
+            DoasSpecs doas1 = new DoasSpecs(doasName, childAirLoops, hwPlantLoopName, chwPlantLoopName, includeHeatRecoveryHx, supplyAirTemperatureC);
 
-            // DOAS base name used to build all object names
-            string doasName = "DOAS1";
+            MessageBox.Show(doas1.GetInfo()); // Comment out this line to disable pop-up message
 
-            // DOAS supply temperature setpoint [°C] (used in a constant Schedule:Compact)
-            double doasSupplyAirTempC = 17.5;
-
-            // Enable/disable heat recovery HX
-            bool enableHeatRecovery = true;
-
-            // Build the DOAS specification (single object controls all inserted IDF content)
-            DoasSpecs doasSpecs = new DoasSpecs(
-               doasName,
-               targetAirLoopNames,
-               hotWaterPlantLoopName,
-               chilledWaterPlantLoopName,
-               enableHeatRecovery,
-               doasSupplyAirTempC
-            );
-
-            // Optional: display the configuration summary (comment out to disable message box pop-up)
-            MessageBox.Show(doasSpecs.GetInfo());
-
-            // Inject and connect the DOAS into the IDF (loads objects, wires plant branches, optional HX disable, saves IDF)
-            doasIdfHandler.LoadDoas(doasSpecs);
+            doasIdfHandler.LoadDoas(doas1);
         }
     }
 
@@ -94,36 +81,33 @@ namespace DB.Extensibility.Scripts
     {
         public string Name;
         public List<string> ChildAirLoops;
-        public string HotWaterPlantLoopName;
-        public string ChilledWaterPlantLoopName;
-        public bool EnableHeatRecovery;
-        public double SupplyTemperatureC;
+        public string HwLoopName;
+        public string ChwLoopName;
+        public bool IncludeHX;
+        public double SupplyTemperature;
 
         public DoasSpecs() { }
 
-        public DoasSpecs(
-           string name,
-           List<string> childAirLoops,
-           string hotWaterPlantLoopName,
-           string chilledWaterPlantLoopName,
-           bool enableHeatRecovery,
-           double supplyTemperatureC)
+        public DoasSpecs(string name, List<string> childAirLoops, string hwLoopName, string chwLoopName, bool includeHX, double supplyTemperature)
         {
             Name = name;
             ChildAirLoops = childAirLoops;
-            HotWaterPlantLoopName = hotWaterPlantLoopName;
-            ChilledWaterPlantLoopName = chilledWaterPlantLoopName;
-            EnableHeatRecovery = enableHeatRecovery;
-            SupplyTemperatureC = supplyTemperatureC;
+            HwLoopName = hwLoopName;
+            ChwLoopName = chwLoopName;
+            IncludeHX = includeHX;
+            SupplyTemperature = supplyTemperature;
         }
 
-        public string HwDemandBranchName { get { return this.Name + " DOAS Heating Coil HW Loop Demand Side Branch"; } }
-        public string ChwDemandBranchName { get { return this.Name + " DOAS Cooling Coil CHW Loop Demand Side Branch"; } }
-        public string HeatRecoveryHxName { get { return this.Name + " DOAS Heat Recovery Device"; } }
-        public string AlwaysOffScheduleName { get { return this.Name + " ALWAYS_OFF"; } }
+        // Derived names used throughout the injected IDF objects
+        public string HwBranchName { get { return this.Name + " DOAS Heating Coil HW Loop Demand Side Branch"; } }
+        public string ChwBranchName { get { return this.Name + " DOAS Cooling Coil CHW Loop Demand Side Branch"; } }
+        public string FanName { get { return this.Name + "DOAS OA Supply Fan"; } }
+        public string HxName { get { return this.Name + " DOAS Heat Recovery Device"; } }
+        public string OffScheduleName { get { return this.Name + " ALWAYS_OFF"; } }
 
         public string GetInfo()
         {
+            // Provide a summary of the current configuration
             string childLoopNames = String.Join("\n - ", this.ChildAirLoops);
             string text = @"DOAS: {0}
 HW loop: {1}
@@ -132,23 +116,18 @@ Heat recovery enabled: {3}
 Supply temperature [C]: {4}
 Child air loops:
 - {5}";
-            return string.Format(
-               text,
-               this.Name,
-               this.HotWaterPlantLoopName,
-               this.ChilledWaterPlantLoopName,
-               this.EnableHeatRecovery,
-               this.SupplyTemperatureC,
-               childLoopNames);
+            return string.Format(text, this.Name, this.HwLoopName, this.ChwLoopName, this.IncludeHX, this.SupplyTemperature, childLoopNames);
         }
 
-        public string BuildIdfObjectsText()
+        public string GetIDFObjects()
         {
+            // Create the list of served air loops and their mixer/splitter node lists
             string airLoops = String.Join(",\n", this.ChildAirLoops);
             int airLoopCount = this.ChildAirLoops.Count;
             string airLoopInlets = String.Join(",\n", this.ChildAirLoops.Select(x => x + " AHU Outdoor Air Inlet"));
             string airLoopOutlets = String.Join(",\n", this.ChildAirLoops.Select(x => x + " AHU Relief Air Outlet"));
 
+            // IDF template (injected into the model as text via Reader.Load)
             string idfObjects = @"
 !-   ===========  ALL OBJECTS IN CLASS: SCHEDULE:COMPACT ===========
 
@@ -180,7 +159,7 @@ Schedule:Compact,
 !-   ===========  ALL OBJECTS IN CLASS: FAN:SYSTEMMODEL ===========
 
 Fan:SystemModel,
-   {0} DOAS OA Supply Fan,                                        !- Name
+   {0}DOAS OA Supply Fan,                                         !- Name
    {0} ALWAYS_ON,                                                 !- Availability Schedule Name
    {0} DOAS Heating Coil Air Outlet Node,                         !- Air Inlet Node Name
    {0} AirLoopSplitterInlet,                                      !- Air Outlet Node Name
@@ -239,10 +218,10 @@ AirLoopHVAC:OutdoorAirSystem:EquipmentList,
    {0} DOAS Heat Recovery Device,                                 !- Component 1 Name
    Coil:Cooling:Water,                                            !- Component 2 Object Type
    {0} DOAS CHW Cooling Coil,                                     !- Component 2 Name
-   Coil:Heating:Water,                                            !- Component 3 Object Type
-   {0} DOAS HW Heating Coil,                                      !- Component 3 Name
-   Fan:SystemModel,                                               !- Component 4 Object Type
-   {0} DOAS OA Supply Fan;                                        !- Component 4 Name
+   Coil:Heating:Water,                                            !- Component 2 Object Type
+   {0} DOAS HW Heating Coil,                                      !- Component 2 Name
+   Fan:SystemModel,                                               !- Component 3 Object Type
+   {0}DOAS OA Supply Fan;                                         !- Component 3 Name
 
 
 !-   ===========  ALL OBJECTS IN CLASS: AIRLOOPHVAC:OUTDOORAIRSYSTEM ===========
@@ -323,39 +302,39 @@ SetpointManager:Scheduled,
    {0} DOAS Heating Coil Air Outlet Node;                         !- Setpoint Node or NodeList Name
 
 Coil:Cooling:Water,
-  {0} DOAS CHW Cooling Coil,                                      !- Component name
-  {0} ALWAYS_ON,                                                  !- Availability schedule
-  autosize,                                                       !- Design Water Volume Flow Rate of Coil (m3/s)
-  autosize,                                                       !- Design Air Flow Rate of Coil (m3/s)
-  autosize,                                                       !- Design Inlet Water Temperature (C)
-  autosize,                                                       !- Design Inlet Air Temperature (C)
-  autosize,                                                       !- Design Outlet Air Temperature (C)
-  autosize,                                                       !- Design Inlet Air Humidity Ratio
-  autosize,                                                       !- Design Outlet Air Humidity Ratio
-  {0} DOAS Cooling Coil Water Inlet Node,                         !- Water inlet node name
-  {0} DOAS Cooling Coil Water Outlet Node,                        !- Water outlet node name
-  {0} DOAS Heat Recovery Device Supply Outlet,                    !- Air inlet node name
-  {0} DOAS Cooling Coil Air Outlet Node,                          !- Air outlet node name
-  SimpleAnalysis,                                                 !- Coil Analysis Type
-  CrossFlow,                                                      !- Heat Exchanger Configuration
-  ;                                                               !- Water Storage Tank for Condensate Collection
+  {0} DOAS CHW Cooling Coil,                                      ! - Component name
+  {0} ALWAYS_ON,                                                  ! - Availability schedule
+  autosize,                                                       ! - Design Water Volume Flow Rate of Coil (m3/s)
+  autosize,                                                       ! - Design Air Flow Rate of Coil (m3/s)
+  autosize,                                                       ! - Design Inlet Water Temperature (C)
+  autosize,                                                       ! - Design Inlet Air Temperature (C)
+  autosize,                                                       ! - Design Outlet Air Temperature (C)
+  autosize,                                                       ! - Design Inlet Air Humidity Ratio
+  autosize,                                                       ! - Design Outlet Air Humidity Ratio
+  {0} DOAS Cooling Coil Water Inlet Node,                         ! - Water inlet node name
+  {0} DOAS Cooling Coil Water Outlet Node,                        ! - Water outlet node name
+  {0} DOAS Heat Recovery Device Supply Outlet,                    ! - Air inlet node name
+  {0} DOAS Cooling Coil Air Outlet Node,                          ! - Air outlet node name
+  SimpleAnalysis,                                                 ! - Coil Analysis Type
+  CrossFlow,                                                      ! - Heat Exchanger Configuration
+  ;                                                               ! - Water Storage Tank for Condensate Collection
 
 Coil:Heating:Water,
-  {0} DOAS HW Heating Coil,                                       !- Component name
-  {0} ALWAYS_ON,                                                  !- Availability schedule
-  autosize,                                                       !- U-factor times area value of coil (W/K)
-  autosize,                                                       !- Max water flow rate of coil (m3/s)
-  {0} DOAS Heating Coil Water Inlet Node,                         !- Water inlet node name
-  {0} DOAS Heating Coil Water Outlet Node,                        !- Water outlet node name
-  {0} DOAS Cooling Coil Air Outlet Node,                          !- Air inlet node name
-  {0} DOAS Heating Coil Air Outlet Node,                          !- Air outlet node name
-  UFactorTimesAreaAndDesignWaterFlowRate,                         !- Coil performance input method
-  autosize,                                                       !- Rated capacity (W)
-  80.0,                                                           !- Rated inlet water temperature (C)
-  16.0,                                                           !- Rated inlet air temperature (C)
-  70.0,                                                           !- Rated outlet water temperature (C)
-  35.0,                                                           !- Rated outlet air temperature (C)
-  0.50;                                                           !- Rated ratio for air and water convection
+  {0} DOAS HW Heating Coil,                                       ! - Component name
+  {0} ALWAYS_ON,                                                  ! - Availability schedule
+  autosize,                                                       ! - U-factor times area value of coil (W/K)
+  autosize,                                                       ! - Max water flow rate of coil (m3/s)
+  {0} DOAS Heating Coil Water Inlet Node,                         ! - Water inlet node name
+  {0} DOAS Heating Coil Water Outlet Node,                        ! - Water outlet node name
+  {0} DOAS Cooling Coil Air Outlet Node,                          ! - Air inlet node name
+  {0} DOAS Heating Coil Air Outlet Node,                          ! - Air outlet node name
+  UFactorTimesAreaAndDesignWaterFlowRate,                         ! - Coil performance input method
+  autosize,                                                       ! - Rated capacity (W)
+  80.0,                                                           ! - Rated inlet water temperature (C)
+  16.0,                                                           ! - Rated inlet air temperature (C)
+  70.0,                                                           ! - Rated outlet water temperature (C)
+  35.0,                                                           ! - Rated outlet air temperature (C)
+  0.50;                                                           ! - Rated ratio for air and water convection
 
 Branch,
   {6},                                                            !- Branch name
@@ -366,23 +345,23 @@ Branch,
   {0} DOAS Cooling Coil Water Outlet Node;                        !- Component 1 outlet node name
 
 Branch,
-  {7},                                                            !- Branch name
-  ,                                                               !- Pressure drop curve name
-  Coil:Heating:Water,                                             !- Component 1 object type
-  {0} DOAS HW Heating Coil,                                       !- Component 1 name
-  {0} DOAS Heating Coil Water Inlet Node,                         !- Component 1 inlet node name
-  {0} DOAS Heating Coil Water Outlet Node;                        !- Component 1 outlet node name
+  {7},                                                            ! - Branch name
+  ,                                                               ! - Pressure drop curve name
+  Coil:Heating:Water,                                             ! - Component 1 object type
+  {0} DOAS HW Heating Coil,                                       ! - Component 1 name
+  {0} DOAS Heating Coil Water Inlet Node,                         ! - Component 1 inlet node name
+  {0} DOAS Heating Coil Water Outlet Node;                        ! - Component 1 outlet node name
 
 Controller:WaterCoil,
-  {0} DOAS Cooling Coil Controller,                               !- Controller name
-  Temperature,                                                    !- Control variable
-  Reverse,                                                        !- Control action
-  Flow,                                                           !- Actuator variable
-  {0} DOAS Cooling Coil Air Outlet Node,                          !- Sensor node name
-  {0} DOAS Cooling Coil Water Inlet Node,                         !- Actuator node name
-  autosize,                                                       !- Controller convergence tolerance
-  autosize,                                                       !- Maximum actuated flow (m3/s)
-  0.000000;                                                       !- Minimum actuated flow (m3/s)
+  {0} DOAS Cooling Coil Controller,                               ! - Controller name
+  Temperature,                                                    ! - Control variable
+  Reverse,                                                        ! - Control action
+  Flow,                                                           ! - Actuator variable
+  {0} DOAS Cooling Coil Air Outlet Node,                          ! - Sensor node name
+  {0} DOAS Cooling Coil Water Inlet Node,                         ! - Actuator node name
+  autosize,                                                       ! - Controller convergence tolerance
+  autosize,                                                       ! - Maximum actuated flow (m3/s)
+  0.000000;                                                       ! - Minimum actuated flow (m3/s)
 
 Controller:WaterCoil,
   {0} DOAS Heating Coil Controller,                               !- Controller name
@@ -404,34 +383,34 @@ AirLoopHVAC:ControllerList,
 
             return String.Format(
                idfObjects,
-               this.Name,                    
-               airLoopCount,                 
-               airLoops,                     
-               airLoopOutlets,               
-               airLoopInlets,                
-               this.SupplyTemperatureC,      
-               this.ChwDemandBranchName,     
-               this.HwDemandBranchName       
+               this.Name,
+               airLoopCount,
+               airLoops,
+               airLoopOutlets,
+               airLoopInlets,
+               this.SupplyTemperature,
+               this.ChwBranchName,
+               this.HwBranchName
             );
         }
     }
 
     public class DoasIdfHandler
     {
-        public IdfReader Idf;
+        public IdfReader Reader;
 
         public DoasIdfHandler() { }
 
         public DoasIdfHandler(IdfReader idfReader)
         {
-            Idf = idfReader;
+            Reader = idfReader;
         }
 
         public IdfObject FindObject(string objectType, string objectName)
         {
             try
             {
-                return this.Idf[objectType].First(c => c[0] == objectName);
+                return this.Reader[objectType].First(c => c[0] == objectName);
             }
             catch (Exception)
             {
@@ -439,37 +418,36 @@ AirLoopHVAC:ControllerList,
             }
         }
 
-        private void AddDemandSideBranchToPlantLoop(string plantLoopName, string branchName)
+        private void AddBranch(string loopName, string branchName)
         {
-            IdfObject branchList = FindObject("BranchList", plantLoopName + " Demand Side Branches");
+            IdfObject branchList = FindObject("branchList", loopName + " Demand Side Branches");
             branchList.InsertField(branchList.Count - 1, branchName);
 
-            IdfObject splitter = FindObject("Connector:Splitter", plantLoopName + " Demand Splitter");
+            IdfObject splitter = FindObject("Connector:Splitter", loopName + " Demand Splitter");
             splitter.InsertField(splitter.Count - 1, branchName);
 
-            IdfObject mixer = FindObject("Connector:Mixer", plantLoopName + " Demand Mixer");
+            IdfObject mixer = FindObject("Connector:Mixer", loopName + " Demand Mixer");
             mixer.InsertField(mixer.Count - 1, branchName);
         }
 
         public void LoadDoas(DoasSpecs doasSpecs)
         {
-            // Load all DOAS-related IDF objects (schedules, OA system, DOAS object, coils, controllers, branches)
-            string doasIdfObjectsText = doasSpecs.BuildIdfObjectsText();
-            this.Idf.Load(doasIdfObjectsText);
+            // Inject all DOAS-related objects (schedules, OA system, coils, controllers, branches, etc.)
+            string doasIdfObjects = doasSpecs.GetIDFObjects();
+            this.Reader.Load(doasIdfObjects);
 
-            // Connect the DOAS heating/cooling coil branches to the HW/CHW plant loop demand sides
-            AddDemandSideBranchToPlantLoop(doasSpecs.HotWaterPlantLoopName, doasSpecs.HwDemandBranchName);
-            AddDemandSideBranchToPlantLoop(doasSpecs.ChilledWaterPlantLoopName, doasSpecs.ChwDemandBranchName);
+            // Add the DOAS coil branches to the HW/CHW demand sides
+            AddBranch(doasSpecs.HwLoopName, doasSpecs.HwBranchName);
+            AddBranch(doasSpecs.ChwLoopName, doasSpecs.ChwBranchName);
 
-            // If heat recovery is disabled, force the HX off via its availability schedule
-            if (!doasSpecs.EnableHeatRecovery)
+            // If HX is not required, disable it by assigning an always-off availability schedule.
+            if (!doasSpecs.IncludeHX)
             {
-                IdfObject hx = FindObject("HeatExchanger:AirToAir:SensibleAndLatent", doasSpecs.HeatRecoveryHxName);
-                hx[1].Value = doasSpecs.AlwaysOffScheduleName;
+                IdfObject hx = FindObject("HeatExchanger:AirToAir:SensibleAndLatent", doasSpecs.HxName);
+                hx[1].Value = doasSpecs.OffScheduleName;
             }
 
-            // Save the modified IDF
-            this.Idf.Save();
+            this.Reader.Save();
         }
     }
 }

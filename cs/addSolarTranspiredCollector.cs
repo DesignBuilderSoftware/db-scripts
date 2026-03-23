@@ -1,84 +1,98 @@
 /*
-    Description:
-    Adds a SolarCollector:UnglazedTranspired object to the EnergyPlus input file.
-    Integrates the solar collector into specified air handling units (AHUs) by updating the outdoor air system equipment list and building surface boundary conditions.
-    Automatically configures output variables for solar collector performance reporting.
+Unglazed Transpired Solar Collector (UTSC) Integration Script
 
-    Workflow (BeforeEnergySimulation):
-    1. Initializes the IDF reader with EnergyPlus input and data dictionary files.
-    2. Adds a free heating setpoint schedule (user can specify schedule name and setpoint value).
-    3. Creates a SolarCollectorProperties object with user-defined parameters:
-       - Collector name
-       - Availability schedule name
-       - Free heating setpoint schedule name
-       - List of building surface names
-       - (Optional physical properties can be customized)
-    4. Defines air loop to control zone mappings via AirloopControlZone array (user specifies air loop and zone names).
-    5. Integrates the solar collector into each air loop:
-       - Updates the outdoor air system equipment list to include the collector.
-       - Updates building surface boundary conditions to reference the collector's conditions model.
-    6. Adds output variables for solar collector performance reporting.
-    7. Saves all changes to the EnergyPlus input file.
+Purpose:
+This DesignBuilder C# script adds a SolarCollector:UnglazedTranspired object to the EnergyPlus input file.
+It integrates the solar collector into specified air handling units (AHUs) by updating the outdoor air system equipment list and building surface boundary conditions.
+Output variables are automatically configured for solar collector performance reporting.
 
-    Expected User Inputs:
-    - Solar collector name
-    - Availability schedule name
-    - Free heating setpoint schedule name
-    - List of building surface names
-    - Air loop and control zone names
-    - (Optional) Physical properties for the collector
+Main Steps:
+1) Add a free heating setpoint schedule (user can specify schedule name and setpoint value).
+2) Create a SolarCollectorProperties object with user-defined parameters:
+   - Collector name
+   - Availability schedule name
+   - Free heating setpoint schedule name
+   - List of building surface names
+   - (Optional physical properties can be customized)
+3) Define air loop to control zone mappings via AirloopControlZone array (user specifies air loop and zone names).
+4) Integrate the solar collector into each air loop:
+   - Updates the outdoor air system equipment list to include the collector.
+   - Updates building surface boundary conditions to reference the collector's conditions model.
+5) Add output variables for solar collector performance reporting.
+6) Save all changes to the EnergyPlus input file.
 
-    DesignBuilder ssage:
-    - Create a new C# script
-    - Copy the content to the editor
-    - Update air loop + control zone pairs and surface references
-    - Enable the script and run a simulation
+How to Use:
+
+Configuration
+- Solar collector name
+- Availability schedule name
+- Free heating setpoint schedule name
+- List of building surface names
+- Air loop and control zone names
+- (Optional) Physical properties for the collector
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
-using System.Runtime;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Forms;
-using System.Globalization;
-using DB.Extensibility.Contracts;
+
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using DB.Extensibility.Contracts;
 using EpNet;
 
 namespace DB.Extensibility.Scripts
-
 {
-    public class IdfFindAndReplace : ScriptBase, IScript
+    // Adds and connects a SolarCollector:UnglazedTranspired to one or more outdoor air systems
+    public class AddUnglazedTranspiredCollector : ScriptBase, IScript
     {
-        private IdfReader Reader;
+        private IdfReader idf;
 
         public override void BeforeEnergySimulation()
         {
-            Reader = new IdfReader(
+            idf = new IdfReader(
                 ApiEnvironment.EnergyPlusInputIdfPath,
                 ApiEnvironment.EnergyPlusInputIddPath);
 
+            // ----------------------------
+            // USER CONFIGURATION SECTION
+            // ----------------------------
+
+            // Free heating schedule
             string freeHeatingScheduleName = "Free Heating Setpoint Schedule";
             AddFreeHeatingSetpointSchedule(freeHeatingScheduleName, 20.0);
 
+            // UTSC definition + target surfaces that will reference the UTSC boundary conditions model
             SolarCollectorProperties collectorProperties = new SolarCollectorProperties(
-                "Unglazed Transpired Collector 1",
-                "On 24/7",
-                freeHeatingScheduleName,
-                new List<string> { "BLOCK1:ZONE1_Wall_5_0_0", "BLOCK2:ZONE1_Wall_5_0_0" });
+                name: "Unglazed Transpired Collector 1",
+                availabilityScheduleName: "On 24/7",
+                setpointScheduleName: freeHeatingScheduleName,
+                surfaceNames: new List<string>
+                {
+                    "BLOCK1:ZONE1_Wall_5_0_0",
+                    "BLOCK2:ZONE1_Wall_5_0_0"
+                });
 
-            AirloopControlZone[] airLoopControlZones = new AirloopControlZone[]
+            // - AirLoop is used to find OA controller and OA equipment list via naming conventions
+            // - ControlZone is used to derive the zone node name "<ControlZone> Zone Air Node"
+            AirLoopControlZone[] airLoopControlZones = new AirLoopControlZone[]
             {
-                new AirloopControlZone { AirLoop = "Air Loop", ControlZone = "Block1:Zone1" },
-                new AirloopControlZone { AirLoop = "Air Loop 1", ControlZone = "Block2:Zone1" }
+                new AirLoopControlZone { AirLoop = "Air Loop",   ControlZone = "Block1:Zone1" },
+                new AirLoopControlZone { AirLoop = "Air Loop 1", ControlZone = "Block2:Zone1" }
             };
-            AddUnglazedTranspiredMultisystem(collectorProperties, airLoopControlZones);
+            AddUnglazedTranspiredCollectorToMultipleAirLoops(collectorProperties, airLoopControlZones);
             AddSolarCollectorOutputs();
 
-            Reader.Save();
+            idf.Save();
         }
 
-        public struct AirloopControlZone
+        public struct AirLoopControlZone
         {
+            // Name of the AirLoop (used to build object names via prerequisites naming convention)
             public string AirLoop { get; set; }
+
+            // Zone name used to build the zone node "<ControlZone> Zone Air Node"
             public string ControlZone { get; set; }
         }
 
@@ -105,8 +119,8 @@ namespace DB.Extensibility.Scripts
             public double EffectivePlenumGapThickness { get; set; }
             public double EffectivePlenumCrossSectionArea { get; set; }
 
-            string HoleLayoutPattern { get; set; }
-            string HeatExchangerEffectivenessCorrelation { get; set; }
+            public string HoleLayoutPattern { get; set; }
+            public string HeatExchangerEffectivenessCorrelation { get; set; }
 
             public double RatioOfActualCollectorAreaToGrossArea { get; set; }
             public string Roughness { get; set; }
@@ -114,9 +128,11 @@ namespace DB.Extensibility.Scripts
 
             public double WindPerforationEffectiveness { get; set; }
             public double DischargeCoefficient { get; set; }
+
             public List<string> SurfaceNames { get; set; }
 
-            public SolarCollectorProperties(string name,
+            public SolarCollectorProperties(
+                string name,
                 string availabilityScheduleName,
                 string setpointScheduleName,
                 List<string> surfaceNames,
@@ -166,12 +182,13 @@ namespace DB.Extensibility.Scripts
 
             public string GetIdfString()
             {
+                // Node connections are provided via SolarCollector:UnglazedTranspired:Multisystem.
                 string solarCollectorTemplate = @"  
 SurfaceProperty:OtherSideConditionsModel,
     {0} Conditions Model,    !- Name
     GapConvectionRadiation;  !- Type of Modeling
 
-  SolarCollector:UnglazedTranspired,
+SolarCollector:UnglazedTranspired,
     {0},                     !- Name
     {0} Conditions Model,    !- Boundary Conditions Model Name
     {1},                     !- Availability Schedule Name
@@ -199,31 +216,34 @@ SurfaceProperty:OtherSideConditionsModel,
                 {
                     bool isLast = (i == SurfaceNames.Count - 1);
                     string terminator = isLast ? ";" : ",";
-                    solarCollectorTemplate += string.Format(CultureInfo.InvariantCulture,
+                    solarCollectorTemplate += string.Format(
+                        CultureInfo.InvariantCulture,
                         ",\n    {0}{1}                     !- Surface {2} Name",
                         SurfaceNames[i],
                         terminator,
                         i + 1);
                 }
 
-                return string.Format(CultureInfo.InvariantCulture, solarCollectorTemplate,
-                    Name,                                                                    // {0}
-                    AvailabilityScheduleName,                                               // {1}
-                    FreeHeatingSetpointScheduleName,                                        // {2}
-                    DiameterOfPerforations.ToString("F3", CultureInfo.InvariantCulture),   // {3}
-                    DistanceBetweenPerforations.ToString("F3", CultureInfo.InvariantCulture), // {4}
-                    ThermalEmissivity.ToString("F3", CultureInfo.InvariantCulture),        // {5}
-                    SolarAbsorptivity.ToString("F3", CultureInfo.InvariantCulture),        // {6}
-                    EffectiveOverallHeight.ToString("F3", CultureInfo.InvariantCulture),   // {7}
-                    EffectivePlenumGapThickness.ToString("F3", CultureInfo.InvariantCulture), // {8}
+                return string.Format(
+                    CultureInfo.InvariantCulture,
+                    solarCollectorTemplate,
+                    Name,                                                                       // {0}
+                    AvailabilityScheduleName,                                                   // {1}
+                    FreeHeatingSetpointScheduleName,                                            // {2}
+                    DiameterOfPerforations.ToString("F3", CultureInfo.InvariantCulture),        // {3}
+                    DistanceBetweenPerforations.ToString("F3", CultureInfo.InvariantCulture),   // {4}
+                    ThermalEmissivity.ToString("F3", CultureInfo.InvariantCulture),             // {5}
+                    SolarAbsorptivity.ToString("F3", CultureInfo.InvariantCulture),             // {6}
+                    EffectiveOverallHeight.ToString("F3", CultureInfo.InvariantCulture),        // {7}
+                    EffectivePlenumGapThickness.ToString("F3", CultureInfo.InvariantCulture),   // {8}
                     EffectivePlenumCrossSectionArea.ToString("F3", CultureInfo.InvariantCulture), // {9}
-                    HoleLayoutPattern,                                                      // {10}
-                    HeatExchangerEffectivenessCorrelation,                                 // {11}
+                    HoleLayoutPattern,                                                          // {10}
+                    HeatExchangerEffectivenessCorrelation,                                      // {11}
                     RatioOfActualCollectorAreaToGrossArea.ToString("F3", CultureInfo.InvariantCulture), // {12}
-                    Roughness,                                                             // {13}
-                    Thickness.ToString("F3", CultureInfo.InvariantCulture),               // {14}
-                    WindPerforationEffectiveness.ToString("F3", CultureInfo.InvariantCulture), // {15}
-                    DischargeCoefficient.ToString("F3", CultureInfo.InvariantCulture)     // {16}
+                    Roughness,                                                                  // {13}
+                    Thickness.ToString("F3", CultureInfo.InvariantCulture),                     // {14}
+                    WindPerforationEffectiveness.ToString("F3", CultureInfo.InvariantCulture),  // {15}
+                    DischargeCoefficient.ToString("F3", CultureInfo.InvariantCulture)           // {16}
                 );
             }
         }
@@ -231,7 +251,7 @@ SurfaceProperty:OtherSideConditionsModel,
         public class SolarCollectorMultisystem
         {
             public string SolarCollectorName { get; set; }
-            public List<MultisystemNodeSpecification> NodeSpecification = new List<MultisystemNodeSpecification>();
+            public List<MultisystemNodeSpecification> NodeSpecifications = new List<MultisystemNodeSpecification>();
 
             public SolarCollectorMultisystem(string solarCollectorName)
             {
@@ -250,12 +270,14 @@ SolarCollector:UnglazedTranspired:Multisystem,
     {2},                !- Outdoor Air System {5} Mixed Air Node
     {3}{4}              !- Outdoor Air System {5} Zone Node" + Environment.NewLine;
 
-                for (int i = 0; i < NodeSpecification.Count; i++)
+                for (int i = 0; i < NodeSpecifications.Count; i++)
                 {
-                    bool isLast = (i == NodeSpecification.Count - 1);
+                    bool isLast = (i == NodeSpecifications.Count - 1);
                     string terminator = isLast ? ";" : ",";
-                    MultisystemNodeSpecification specification = NodeSpecification[i];
-                    template += string.Format(nodesTemplate,
+                    MultisystemNodeSpecification specification = NodeSpecifications[i];
+
+                    template += string.Format(
+                        nodesTemplate,
                         specification.InletNode,
                         specification.OutletNode,
                         specification.MixedNode,
@@ -270,6 +292,7 @@ SolarCollector:UnglazedTranspired:Multisystem,
 
         public void AddFreeHeatingSetpointSchedule(string name, double setpoint)
         {
+            // Simple constant schedule used by the UTSC “Free Heating Setpoint Schedule Name” field
             string template = @"  
 Schedule:Compact,
     {0},                     !- Name
@@ -277,30 +300,38 @@ Schedule:Compact,
     Through: 12/31,          !- Field 1
     For: AllDays,            !- Field 2
     Until: 24:00,{1};        !- Field 3";
-            Reader.Load(string.Format(CultureInfo.InvariantCulture, template, name, setpoint));
+
+            idf.Load(string.Format(CultureInfo.InvariantCulture, template, name, setpoint));
         }
 
-        public void AddUnglazedTranspiredMultisystem(SolarCollectorProperties collectorProperties, AirloopControlZone[] airloopControlZones)
+        public void AddUnglazedTranspiredCollectorToMultipleAirLoops(
+            SolarCollectorProperties collectorProperties,
+            AirLoopControlZone[] airLoopControlZones)
         {
             SolarCollectorMultisystem multisystem = new SolarCollectorMultisystem(collectorProperties.Name);
-            foreach (var airloopControlZone in airloopControlZones)
-            {
-                string airLoopName = airloopControlZone.AirLoop;
-                string controlZoneNode = airloopControlZone.ControlZone;
 
-                MultisystemNodeSpecification nodeSpec = AddTranspiredCollectorToAirLoop(collectorProperties.Name, airLoopName, controlZoneNode);
-                multisystem.NodeSpecification.Add(nodeSpec);
+            foreach (var airLoopControlZone in airLoopControlZones)
+            {
+                string airLoopName = airLoopControlZone.AirLoop;
+                string controlZoneName = airLoopControlZone.ControlZone;
+
+                MultisystemNodeSpecification nodeSpec =
+                    AddTranspiredCollectorToAirLoop(collectorProperties.Name, airLoopName, controlZoneName);
+
+                multisystem.NodeSpecifications.Add(nodeSpec);
             }
 
             UpdateBuildingSurfaceConditions(collectorProperties.SurfaceNames, collectorProperties.Name);
 
-            Reader.Load(collectorProperties.GetIdfString());
-            Reader.Load(multisystem.GetIdfString());
+            idf.Load(collectorProperties.GetIdfString());
+            idf.Load(multisystem.GetIdfString());
         }
 
-        public void UpdateBuildingSurfaceConditions(List<String> surfaceNames, string collectorName)
+        public void UpdateBuildingSurfaceConditions(List<string> surfaceNames, string collectorName)
         {
+            // Link each surface to the UTSC-generated OtherSideConditionsModel
             string conditionsModelName = collectorName + " Conditions Model";
+
             foreach (string surfaceName in surfaceNames)
             {
                 IdfObject surface = FindObject("BuildingSurface:Detailed", surfaceName);
@@ -309,8 +340,12 @@ Schedule:Compact,
             }
         }
 
-        public MultisystemNodeSpecification AddTranspiredCollectorToAirLoop(string solarCollectorName, string airLoopName, string controlZoneName)
+        public MultisystemNodeSpecification AddTranspiredCollectorToAirLoop(
+            string solarCollectorName,
+            string airLoopName,
+            string controlZoneName)
         {
+            // Naming convention prerequisite: OA controller must match this exact name
             string oaControllerName = airLoopName + " AHU Outdoor Air Controller";
             IdfObject oaController = FindObject("Controller:OutdoorAir", oaControllerName);
 
@@ -327,9 +362,9 @@ Schedule:Compact,
                 ZoneNode = zoneNode
             };
 
-            string oaEquipmentName = airLoopName + " AHU Outdoor air Equipment List";
-
-            IdfObject oaEquipmentList = FindObject("AirLoopHVAC:OutdoorAirSystem:EquipmentList", oaEquipmentName);
+            // Naming convention prerequisite: OA equipment list must match this exact name
+            string oaEquipmentListName = airLoopName + " AHU Outdoor air Equipment List";
+            IdfObject oaEquipmentList = FindObject("AirLoopHVAC:OutdoorAirSystem:EquipmentList", oaEquipmentListName);
 
             string firstComponentType = oaEquipmentList["Component 1 Object Type"].Value;
             string firstComponentName = oaEquipmentList["Component 1 Name"].Value;
@@ -355,7 +390,7 @@ Schedule:Compact,
 
         public void AddSolarCollectorOutputs()
         {
-            string variables = @"
+            string outputVariablesIdf = @"
 Output:Variable,*,Solar Collector Heat Exchanger Effectiveness,hourly; !- HVAC Average []
 Output:Variable,*,Solar Collector Leaving Air Temperature,hourly; !- HVAC Average [C]
 Output:Variable,*,Solar Collector Outside Face Suction Velocity,hourly; !- HVAC Average [m/s]
@@ -370,18 +405,19 @@ Output:Variable,*,Solar Collector Buoyancy Natural Ventilation Mass Flow Rate,ho
 Output:Variable,*,Solar Collector Incident Solar Radiation,hourly; !- HVAC Average [W/m2]
 Output:Variable,*,Solar Collector System Efficiency,hourly; !- HVAC Average []
 Output:Variable,*,Solar Collector Surface Efficiency,hourly; !- HVAC Average []";
-            Reader.Load(variables);
+
+            idf.Load(outputVariablesIdf);
         }
 
         public IdfObject FindObject(string objectType, string objectName)
         {
             try
             {
-                return Reader[objectType].First(c => c[0] == objectName);
+                return idf[objectType].First(c => c[0] == objectName);
             }
             catch (Exception)
             {
-                throw new Exception(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
+                throw new Exception(string.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
             }
         }
     }
