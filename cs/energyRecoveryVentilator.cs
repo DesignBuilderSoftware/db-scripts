@@ -1,8 +1,31 @@
 /*
-Replace all Fan:ZoneExhaust with ZoneHVAC:EnergyRecoveryVentilators (ERV).
+Replace all zone exhaust fans with ERVs.
 
-ERV availability schedule and nominal air flow is read from Zone exhaust fan inputs in DesignBuilder.
-Remaining attributes can be set in 'boilerplate' IDF text below.
+Purpose:
+This DesignBuilder C# script edits the IDF to replace Fan:ZoneExhaust objects with ZoneHVAC:EnergyRecoveryVentilator (ERV) systems.
+
+Main Steps:
+1) Find all Fan:ZoneExhaust objects that are referenced inside ZoneHVAC:EquipmentList
+2) Create a ZoneHVAC:EnergyRecoveryVentilator, its Controller, two Fan:SystemModel objects, and a HeatExchanger object per exhaust fan
+3) Adjust the required NodeList
+4) Replace the equipment reference in ZoneHVAC:EquipmentList from Fan:ZoneExhaust to ZoneHVAC:EnergyRecoveryVentilator
+5) Remove the original Fan:ZoneExhaust objects from the IDF
+6) Add a scheduled SetpointManager + NodeList and populating it with all heat exchanger supply outlet nodes
+
+How to Use:
+
+Configuration
+- Configure ERV parameters by editing the 'boilerplate' IDF text below:
+   - ervBoilerplateIdf: ERV, controller, fans, heat exchanger performance/controls
+   - spmBoilerplateIdf: setpoint manager / schedule / node list for HX outlet nodes
+- ERV availability schedule and nominal air flow is read from Zone exhaust fan inputs in DesignBuilder.
+
+Prerequisites / Placeholders
+- Ensure your model contains one or more Fan:ZoneExhaust objects assigned to zones
+- The availability schedule and nominal air flow defined in the Fan:ZoneExhaust via user interface is applied in the ERV
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System.Collections.Generic;
@@ -13,11 +36,15 @@ using System;
 using EpNet;
 
 namespace DB.Extensibility.Scripts
-
 {
     public class IdfFindAndReplace : ScriptBase, IScript
     {
-        string ervBoilerPlate = @"ZoneHVAC:EnergyRecoveryVentilator,
+        // ----------------------------
+        // USER CONFIGURATION SECTION
+        // ----------------------------
+        // Boilerplate IDF used to create ERV + controller + fans + heat exchanger.
+        string ervBoilerplateIdf = @"
+ZoneHVAC:EnergyRecoveryVentilator,
     {0},                                      !- Name
     {1},                                      !- Availability Schedule Name
     {0} OA Heat Recovery,                     !- Heat Exchanger Name
@@ -27,7 +54,7 @@ namespace DB.Extensibility.Scripts
     {0} Exhaust Fan,                          !- Exhaust Air Fan Name
     {0} OA Controller;                        !- Controller Name
 	
-  ZoneHVAC:EnergyRecoveryVentilator:Controller,
+ZoneHVAC:EnergyRecoveryVentilator:Controller,
     {0} OA Controller,                        !- Name
     ,                                         !- Temperature High Limit
     ,                                         !- Temperature Low Limit
@@ -42,7 +69,7 @@ namespace DB.Extensibility.Scripts
     ,                                         !- High Humidity Outdoor Air Flow Ratio
     No;                                       !- Control High Indoor Humidity Based on Outdoor Humidity Ratio
 	
-  Fan:SystemModel,
+Fan:SystemModel,
     {0} Supply Fan,                           !- Name
     {1},                                      !- Availability Schedule Name
     {0} Heat Recovery Outlet Node,            !- Air Inlet Node Name
@@ -59,7 +86,7 @@ namespace DB.Extensibility.Scripts
     ,                                         !- Electric Power Per Unit Flow Rate Per Unit Pressure
     0.50;                                     !- Fan Total Efficiency
 
-  Fan:SystemModel,
+Fan:SystemModel,
     {0} Exhaust Fan,                          !- Name
     {1},                                      !- Availability Schedule Name
     {0} Heat Recovery Secondary Outlet Node,  !- Air Inlet Node Name
@@ -76,7 +103,7 @@ namespace DB.Extensibility.Scripts
     ,                                         !- Electric Power Per Unit Flow Rate Per Unit Pressure
     0.50;                                     !- Fan Total Efficiency
 	
-  HeatExchanger:AirToAir:SensibleAndLatent,
+HeatExchanger:AirToAir:SensibleAndLatent,
     {0} OA Heat Recovery,                     !- Name
     {1},                                      !- Availability Schedule Name
     {2},                                      !- Nominal Supply Air Flow Rate
@@ -98,16 +125,21 @@ namespace DB.Extensibility.Scripts
     MinimumExhaustTemperature,                !- Frost Control Type
     1.7;                                      !- Threshold Temperature";
 
-        string spmBoilerPlate = @"SetpointManager:Scheduled,
+        // ----------------------------
+        // USER CONFIGURATION SECTION
+        // ----------------------------
+        // Boilerplate IDF used to add a setpoint manager/schedule and a NodeList to collect HX outlet nodes.
+        string spmBoilerplateIdf = @"
+SetpointManager:Scheduled,
     Heat Exchanger Supply Air Temp Manager,  !- Name
     Temperature,                             !- Control Variable
     Heat Exchanger Supply Air Temp Sch,      !- Schedule Name
     {0};                                     !- Setpoint Node or NodeList Name
 	
-	NodeList,
+NodeList,
     {0};                                     !- Name
 	
-	Schedule:Compact,
+Schedule:Compact,
     Heat Exchanger Supply Air Temp Sch,      !- Name
     Temperature,                             !- Schedule Type Limits Name
     Through: 12/31,                          !- Field 1
@@ -119,6 +151,7 @@ namespace DB.Extensibility.Scripts
             return idfReader[objectType].First(o => o[0] == objectName);
         }
 
+        // Scan ZoneHVAC:EquipmentList for entries of a given object type and return the referenced objects.
         private List<IdfObject> FindObjectsInZoneEquipment(IdfReader idfReader, string objectType)
         {
             List<IdfObject> objects = new List<IdfObject>();
@@ -142,6 +175,7 @@ namespace DB.Extensibility.Scripts
             return objects;
         }
 
+        // Replace the matching (type,name) pairs in ZoneHVAC:EquipmentList.
         private void ReplaceObjectsInZoneEquipment(IdfReader idfReader, string oldObjectType, string oldObjectName, string newObjectType, string newObjectName)
         {
             IEnumerable<IdfObject> allZoneEquipment = idfReader["ZoneHVAC:EquipmentList"];
@@ -169,19 +203,20 @@ namespace DB.Extensibility.Scripts
             }
         }
 
-        private List<string> FindNodes(IdfReader idfReader, string objectName, string fieldName)
+        // Collect node names from objects of a given type using the given field name.
+        private List<string> FindNodes(IdfReader idfReader, string objectType, string fieldName)
         {
             List<string> nodes = new List<string>();
-            IEnumerable<IdfObject> idfObjects = idfReader[objectName];
+            IEnumerable<IdfObject> idfObjects = idfReader[objectType];
 
             foreach (IdfObject idfObject in idfObjects)
             {
-                string nodeName = idfObject[fieldName];
+                string nodeName = idfObject[fieldName].Value;
 
                 if (nodeName.EndsWith("List"))
                 {
                     IdfObject nodeList = idfReader["NodeList"].First(item => item[0] == nodeName);
-                    nodeName = nodeList[1];
+                    nodeName = nodeList[1].Value;
                 }
                 nodes.Add(nodeName);
             }
@@ -194,6 +229,7 @@ namespace DB.Extensibility.Scripts
                 ApiEnvironment.EnergyPlusInputIdfPath,
                 ApiEnvironment.EnergyPlusInputIddPath);
 
+            // Target selection: only Fan:ZoneExhaust objects referenced in ZoneHVAC:EquipmentList are converted.
             IEnumerable<IdfObject> exhaustFans = FindObjectsInZoneEquipment(idfReader, "Fan:ZoneExhaust");
 
             string oldObjectType = "Fan:ZoneExhaust";
@@ -201,36 +237,55 @@ namespace DB.Extensibility.Scripts
 
             foreach (var exhaustFan in exhaustFans)
             {
-                string name = exhaustFan[0].Value;
-                string schedule = exhaustFan[1].Value;
-                string flowRate = exhaustFan[4].Value;
-                string zoneExhaustNode = exhaustFan[5].Value;
-                string zoneName = name.Split(' ')[0];
-                string ervName = name.Split(' ')[0] + " ERV";
+                // Read key inputs from the exhaust fan placeholder.
+                string exhaustFanName = exhaustFan[0].Value;
+                string availabilityScheduleName = exhaustFan[1].Value;
+                string nominalFlowRate = exhaustFan[4].Value;
+                string zoneExhaustAirNode = exhaustFan[5].Value;
+                string zoneName = exhaustFanName.Split(' ')[0];
+
+                // Create new ERV and related nodes using a predictable naming convention.
+                string ervName = zoneName + " ERV";
                 string zoneInletNode = ervName + " Supply Fan Outlet Node";
-                string ervOANode = ervName + " Supply ERV Inlet Node";
+                string ervOutdoorAirInletNode = ervName + " Supply ERV Inlet Node";
 
-                string newComponents = String.Format(ervBoilerPlate, ervName, schedule, flowRate, zoneExhaustNode, zoneInletNode, ervOANode);
-                idfReader.Load(newComponents);
+                // Add ERV + controller + fans + HX to the IDF.
+                string ervIdfText = String.Format(
+                    ervBoilerplateIdf,
+                    ervName,
+                    availabilityScheduleName,
+                    nominalFlowRate,
+                    zoneExhaustAirNode,
+                    zoneInletNode,
+                    ervOutdoorAirInletNode);
 
-                IdfObject oaNodes = idfReader["OutdoorAir:NodeList"][0];
-                oaNodes.AddField(ervOANode);
+                idfReader.Load(ervIdfText);
 
-                IdfObject nodeList = FindObject(idfReader, "NodeList", zoneName + " Air Inlet Node List");
-                nodeList.AddField(zoneInletNode);
+                // Ensure the ERV OA inlet node is included in the global outdoor air node list.
+                IdfObject outdoorAirNodeList = idfReader["OutdoorAir:NodeList"][0];
+                outdoorAirNodeList.AddField(ervOutdoorAirInletNode);
 
-                ReplaceObjectsInZoneEquipment(idfReader, oldObjectType, exhaustFan[0], newObjectType, ervName);
+                // Add the ERV supply outlet node to the zone air inlet node list.
+                IdfObject zoneAirInletNodeList = FindObject(idfReader, "NodeList", zoneName + " Air Inlet Node List");
+                zoneAirInletNodeList.AddField(zoneInletNode);
 
+                ReplaceObjectsInZoneEquipment(idfReader, oldObjectType, exhaustFan[0].Value, newObjectType, ervName);
+
+                // Remove the original exhaust fan object from the IDF.
                 idfReader.Remove(exhaustFan);
             }
 
-            string nodeListName = "ERV HR Outlets";
-            string spmObjects = String.Format(spmBoilerPlate, nodeListName);
-			idfReader.Load(spmObjects);
-            List<string> outletNodes = FindNodes(idfReader, "HeatExchanger:AirToAir:SensibleAndLatent", "Supply Air Outlet Node Name");
-            
-            IdfObject ervNodeList = FindObject(idfReader, "NodeList", nodeListName);
-            ervNodeList.AddFields(outletNodes.ToArray());
+            // Add setpoint manager + schedule + node list for HX outlet nodes.
+            string ervOutletNodeListName = "ERV HR Outlets";
+            string spmObjects = String.Format(spmBoilerplateIdf, ervOutletNodeListName);
+            idfReader.Load(spmObjects);
+            List<string> heatExchangerSupplyOutletNodes = FindNodes(
+                idfReader,
+                "HeatExchanger:AirToAir:SensibleAndLatent",
+                "Supply Air Outlet Node Name");
+
+            IdfObject ervOutletNodeList = FindObject(idfReader, "NodeList", ervOutletNodeListName);
+            ervOutletNodeList.AddFields(heatExchangerSupplyOutletNodes.ToArray());
 
             idfReader.Save();
         }

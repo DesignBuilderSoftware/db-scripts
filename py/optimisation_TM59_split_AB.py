@@ -5,6 +5,7 @@ Criteria A & B are reported as two independent output variables.
 
 Required model inputs:
 - Enable TM59 outputs
+- Enable SQLite output
 - Add two "Custom Script" KPIs:
         "TM59 Discomfort Crit A %"
         "TM59 Discomfort Crit B %"
@@ -20,7 +21,7 @@ import ctypes
 import os
 
 from db_eplusout_reader import Variable, get_results
-from db_eplusout_reader.constants import *
+from db_eplusout_reader.constants import RP
 from db_eplusout_reader.exceptions import NoResults
 
 THRESHOLD_A = 3

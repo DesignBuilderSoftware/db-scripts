@@ -1,4 +1,4 @@
-! EMS script for calculating total building infiltration
+! Calculates total building infiltration
 
 ! Output:Variable,*,Zone Infiltration Current Density Volume Flow Rate,hourly; !- HVAC Average [m3/s]
 

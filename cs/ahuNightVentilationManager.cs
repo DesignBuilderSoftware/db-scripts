@@ -1,10 +1,31 @@
 /*
-This script applies the "AvailabilityManager:NightVentilation" control to specified air loops.
+Night Ventilation Availability Manager Assignment Script
 
+Purpose:
+This DesignBuilder C# script adds an EnergyPlus AvailabilityManager:NightVentilation controller to one or more specified air loops.
+
+Main Steps:
+1) Locate each target air loop’s supply fan (via the air loop main Branch object)
+2) Extract the fan Availability Schedule Name
+3) Create an AvailabilityManager:NightVentilation object using that fan schedule and a user-specified control zone
+4) Assignthe new AvailabilityManager to the air loop’s AvailabilityManagerAssignmentList
+5) Add shared schedules used by the night ventilation manager (Applicability + Setpoint)
+
+How to Use:
+
+Configuration
+- Target selection: air loops are selected by the dictionary keys in loopControlZonePairs.
+- Control zone: set per air loop using the dictionary values.
+
+Prerequisites / Placeholders
+- One or more Air Loops must be included in the base model.
+- The air lopps must have supply fans which support the night ventilation control (Fan:VariableVolume, Fan:ConstantVolume, Fan:OnOff)
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
 using System;
-using System.Runtime;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,11 +33,13 @@ using DB.Extensibility.Contracts;
 using EpNet;
 
 namespace DB.Extensibility.Scripts
-{ 
-    public class IdfFindAndReplace : ScriptBase, IScript 
+{
+    public class IdfFindAndReplace : ScriptBase, IScript
     {
         // Define IDF templates
-        readonly string nightVentilationTemplate = @"AvailabilityManager:NightVentilation,
+        //  Parameterized fields: {0} = manager name, {1} = fan availability schedule name, {2} = control zone name
+        private readonly string nightVentilationTemplate = @"
+AvailabilityManager:NightVentilation,
     {0},                     !- Name
     Night Ventilation Applicability Schedule, !- Applicability Schedule Name
     {1},                     !- Fan Schedule Name
@@ -26,7 +49,9 @@ namespace DB.Extensibility.Scripts
     0.5,                     !- Night Venting Flow Fraction
     {2};                     !- Control Zone Name";
 
-        readonly string commonObjects = @"Schedule:Compact,
+        // Shared schedules used by AvailabilityManager:NightVentilation.
+        private readonly string sharedSchedulesIdf = @"
+Schedule:Compact,
     Night Ventilation Setpoint Schedule,  !- Name
     Any Number,              !- Schedule Type Limits Name
     Through: 12/31,          !- Field 1
@@ -48,83 +73,86 @@ Schedule:Compact,
             {
                 return reader[objectType].First(c => c[0] == objectName);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw new Exception(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
+                throw new Exception(string.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
             }
         }
 
         private string FindFanScheduleName(IdfReader reader, string airLoopName)
         {
             IdfObject mainBranch = FindObject(reader, "Branch", airLoopName + " AHU Main Branch");
-            string[] fanTypes = { "Fan:VariableVolume", "Fan:ConstantVolume", "Fan:OnOff" };
-            var result = mainBranch
+            // Supported fan types to search for within the Branch equipment list fields
+            string[] fanObjectTypes = { "Fan:VariableVolume", "Fan:ConstantVolume", "Fan:OnOff" };
+            var fanRefField = mainBranch
                 .Select((field, idx) => new { field, idx })
-                .FirstOrDefault(x => fanTypes.Contains(x.field.Value));
-            if (result == null)
+                .FirstOrDefault(x => fanObjectTypes.Contains(x.field.Value));
+
+            if (fanRefField == null)
             {
                 throw new Exception("Cannot find fan in air loop: " + airLoopName);
             }
 
-            int fanTypeIndex = result.idx;
-            string fanType = mainBranch[fanTypeIndex].Value;
-            string fanName = mainBranch[fanTypeIndex + 1].Value;
-            IdfObject fan = FindObject(reader, fanType, fanName);
+            int fanTypeFieldIndex = fanRefField.idx;
+            string fanObjectType = mainBranch[fanTypeFieldIndex].Value;
+            string fanObjectName = mainBranch[fanTypeFieldIndex + 1].Value;
+            IdfObject fan = FindObject(reader, fanObjectType, fanObjectName);
             return fan[1].Value;
         }
 
-        private void UpdateAssignmentList(IdfReader reader, string airLoopName, string managerCls, string managerName)
+        private void UpdateAssignmentList(IdfReader reader, string airLoopName, string managerObjectType, string managerInstanceName)
         {
-            string availabilityAssignmentListCls = "AvailabilityManagerAssignmentList";
-            string availabilityAssignmentListName = airLoopName + " AvailabilityManager List";
+            string assignmentListObjectType = "AvailabilityManagerAssignmentList";
+            string assignmentListName = airLoopName + " AvailabilityManager List";
 
-            IdfObject availabilityAssignmentList = FindObject(reader, availabilityAssignmentListCls, availabilityAssignmentListName);
-            if (availabilityAssignmentList[1] == "AvailabilityManager:Scheduled")
+            IdfObject assignmentList = FindObject(reader, assignmentListObjectType, assignmentListName);
+            if (assignmentList[1] == "AvailabilityManager:Scheduled")
             {
-                availabilityAssignmentList[1].Value = managerCls;
-                availabilityAssignmentList[2].Value = managerName;
+                assignmentList[1].Value = managerObjectType;
+                assignmentList[2].Value = managerInstanceName;
             }
             else
             {
-                availabilityAssignmentList.AddFields(managerCls, managerName);
+                assignmentList.AddFields(managerObjectType, managerInstanceName);
             }
         }
 
         public override void BeforeEnergySimulation()
         {
-            IdfReader idfReader = new IdfReader(
+            IdfReader idf = new IdfReader(
                 ApiEnvironment.EnergyPlusInputIdfPath,
                 ApiEnvironment.EnergyPlusInputIddPath);
 
-            // Define key (air loop name) value (control zone name) pairs
-            // Check IDF to get exact names
+            // Map: Define key (air loop name) value (control zone name) pairs (check IDF to get exact names)
             var loopControlZonePairs = new Dictionary<string, string>
-             {
-                 { "Air Loop", "Block1:Zone1" },
-                 // { "Air Loop 1", "Block1:Zone2" }
-             };
+            {
+                { "Air Loop", "Block1:Zone1" },
+                // { "Air Loop 1", "Block1:Zone2" }
+            };
 
-            StringBuilder idfContent = new StringBuilder();
+            StringBuilder idfToAdd = new StringBuilder();
 
             foreach (var pair in loopControlZonePairs)
-            {    
+            {
                 string airLoopName = pair.Key;
                 string controlZoneName = pair.Value;
 
-                string nightVentilationCls = "AvailabilityManager:NightVentilation";
-                string nightVentilationName = airLoopName + " Night Ventilation";
+                string nightVentManagerObjectType = "AvailabilityManager:NightVentilation";
+                string nightVentManagerName = airLoopName + " Night Ventilation";
 
-                string fanScheduleName = FindFanScheduleName(idfReader, airLoopName);
-                idfContent.AppendFormat(nightVentilationTemplate, nightVentilationName, fanScheduleName, controlZoneName);
-                idfContent.Append(Environment.NewLine);
+                // Determine the fan availability schedule by locating the supply fan on the air loop main branch
+                string fanScheduleName = FindFanScheduleName(idf, airLoopName);
 
-                UpdateAssignmentList(idfReader, airLoopName, nightVentilationCls, nightVentilationName);
+                idfToAdd.AppendFormat(nightVentilationTemplate, nightVentManagerName, fanScheduleName, controlZoneName);
+                idfToAdd.Append(Environment.NewLine);
+
+                UpdateAssignmentList(idf, airLoopName, nightVentManagerObjectType, nightVentManagerName);
             }
 
-            idfContent.Append(commonObjects);
+            idfToAdd.Append(sharedSchedulesIdf);
 
-            idfReader.Load(idfContent.ToString());
-            idfReader.Save();
+            idf.Load(idfToAdd.ToString());
+            idf.Save();
         }
     }
 }

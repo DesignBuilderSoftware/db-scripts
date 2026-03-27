@@ -3,6 +3,7 @@ Use CIBSE TM52 results as optimisation KPI.
 
 Required model inputs:
     - Enable TM52 outputs
+    - Enable SQLite output
     - Add a "Custom Script" KPI, use "TM52 Discomfort %" name
     - Run a "Standard" simulation to make sure that TM52 outputs are present
 
@@ -78,7 +79,12 @@ def after_energy_simulation():
     except ZeroDivisionError:
         raise NoResults("No TM52 results found!")
 
-    show_message("Results TM52", "{}% fails, total_area {}m2, fail_area: {}m2".format(percentage_area_fail, total_area, fail_area))
+    show_message(
+        "Results TM52",
+        "{}% fails, total_area {}m2, fail_area: {}m2".format(
+            percentage_area_fail, total_area, fail_area
+        ),
+    )
 
     table = site.GetTable("ParamResultsTmp")
     record = table.AddRecord()

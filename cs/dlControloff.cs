@@ -1,7 +1,30 @@
-/* 
-Override Daylighting controls schedule to disable daylighting control for sizing calculations.
+/*
+Daylighting Controls Sizing Override (Disable Daylighting on Cooling Design Days)
 
+Purpose:
+This DesignBuilder C# script disables daylighting controls for sizing-related calculations by
+overriding the Availability Schedule referenced by all Daylighting:Controls objects.
+
+Main Steps:
+1) Find all Daylighting:Controls objects
+2) Force their "Availability Schedule Name" to a custom schedule (default: "OnSddOff")
+3) Inject a Schedule:Compact object named "OnSddOff" that:
+  - Sets availability to 0 during SummerDesignDay (daylighting disabled for sizing design day)
+  - Sets availability to 1 for all other days (daylighting enabled for normal simulation periods)
+4) Save the modified IDF back to disk before EnergyPlus runs
+
+How to Use:
+
+Configuration
+- Schedule name: "OnSddOff"
+
+Prerequisites / Placeholders
+- The model must contain one or more Daylighting:Controls objects.
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
+
 using System.Collections.Generic;
 using System.Windows.Forms;
 using DB.Extensibility.Contracts;
@@ -14,19 +37,34 @@ namespace DB.Extensibility.Scripts
         private void UpdateDlSchedule()
         {
             IdfReader idfReader = new IdfReader(
-    ApiEnvironment.EnergyPlusInputIdfPath,
-    ApiEnvironment.EnergyPlusInputIddPath);
+                ApiEnvironment.EnergyPlusInputIdfPath,
+                ApiEnvironment.EnergyPlusInputIddPath);
 
-            IEnumerable<IdfObject> dlControls = idfReader["Daylighting:Controls"];
+            // Target all daylighting control objects and override their availability schedule reference.
+            IEnumerable<IdfObject> daylightingControls = idfReader["Daylighting:Controls"];
 
-            MessageBox.Show("Updating daylighting control availability");
+            MessageBox.Show("Updating daylighting control availability"); // Comment this line to disable the message box.
 
-            foreach (IdfObject dlControl in dlControls)
+            // Force each daylighting control object to use the override schedule.
+            foreach (IdfObject daylightingControl in daylightingControls)
             {
-                dlControl["Availability Schedule Name"].Value = "OnSddOff";
+                daylightingControl["Availability Schedule Name"].Value = "OnSddOff";
             }
 
-            idfReader.Load("Schedule:Compact,\nOnSddOff,\nFraction,\nThrough: 12/31,\nFor: SummerDesignDay,\nUntil: 24:00,\n0,\nFor: AllOtherDays,\nUntil: 24:00,\n1;");
+            // "OnSddOff" is defined as: 0 on SummerDesignDay, 1 on all other days.
+            const string onSddOffScheduleCompact =
+                "Schedule:Compact,\n" +
+                "OnSddOff,\n" +
+                "Fraction,\n" +
+                "Through: 12/31,\n" +
+                "For: SummerDesignDay,\n" +
+                "Until: 24:00,\n" +
+                "0,\n" +
+                "For: AllOtherDays,\n" +
+                "Until: 24:00,\n" +
+                "1;";
+
+            idfReader.Load(onSddOffScheduleCompact);
 
             idfReader.Save();
         }
@@ -41,5 +79,4 @@ namespace DB.Extensibility.Scripts
             UpdateDlSchedule();
         }
     }
-
 }

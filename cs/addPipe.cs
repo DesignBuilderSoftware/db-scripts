@@ -1,15 +1,48 @@
 /*
-This C# script is designed to enhance the functionality by providing an option to add Pipe:Indoor and Pipe:Outdoor objects to an IDF file. 
+Add indoor and outdoor pipe objects
 
+Purpose:
+This DesignBuilder C# script adds Pipe:Indoor and Pipe:Outdoor Objects to the EnergyPlus IDF
+
+Main Steps:
+1) Create insulated pipe constructions (Construction + Material layers)
+2) Insert Pipe:Indoor and Pipe:Outdoor objects into specified plant Branch objects
+3) UpdatePlantLoop outlet node references to match the new pipe outlet nodes
+
+How to Use:
+
+Configuration
+Open BeforeEnergySimulation() and edit the "Configuration" section:
+- Pipe constructions:
+  - pipeConstructionName: name for the Construction and associated Material layers
+  - insulationThickness: insulation layer thickness [m]
+- Indoor pipes:
+  - zoneName: the thermal zone used for ambient temperature (Environment Type = ZONE)
+- Indoor/Outdoor pipes:
+  - branchName: the target Branch to modify
+  - pipeName: name of the pipe object that will be inserted
+  - pipeConstructionName: Construction name to assign
+  - pipeInsideDiameter: inside diameter [m]
+  - pipeLength: length [m]
+
+Prerequisites / Placeholders
+- The IDF must contain:
+  - Branch objects with names matching branchName inputs.
+  - PlantLoop objects (if you expect PlantLoop outlet node references to be updated).
+  - For Pipe:Indoor, the specified zoneName must exist (Zone object).
+- NOTE: The inlet node name for the inserted pipe is taken from the last field in the Branch object (see AddIndoorPipeToBranch / AddOutdoorPipeToBranch).
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
-using System.Runtime;
+
 using System;
 using System.Linq;
 using System.Windows.Forms;
+using System.Globalization;
 
 using DB.Extensibility.Contracts;
 using EpNet;
-
 
 namespace DB.Extensibility.Scripts
 {
@@ -21,84 +54,100 @@ namespace DB.Extensibility.Scripts
                 ApiEnvironment.EnergyPlusInputIdfPath,
                 ApiEnvironment.EnergyPlusInputIddPath);
 
-            // define pump constructions
-            string pipeConstruction1 = "pipe construction 1";
-            AddInsulatedPipe(idfReader, pipeConstruction1, 0.025);
+            // ----------------------------
+            // USER CONFIGURATION SECTION
+            // ----------------------------
 
-            string pipeConstruction2 = "pipe construction 2";
-            AddInsulatedPipe(idfReader, pipeConstruction2, 0.05);
+            // Define pipe constructions (Construction + Material layers)
+            string indoorPipeConstructionName = "pipe construction 1";
+            AddInsulatedPipeConstruction(idfReader, indoorPipeConstructionName, insulationThickness: 0.025);
 
-            // define pipes to be added
-            AddIndoorPipe(
+            string outdoorPipeConstructionName = "pipe construction 2";
+            AddInsulatedPipeConstruction(idfReader, outdoorPipeConstructionName, insulationThickness: 0.05);
+
+            // Define pipes to be added (target by Branch name)
+            AddIndoorPipeToBranch(
                 reader: idfReader,
                 zoneName: "BASEMENT:ZONE1",
                 branchName: "HW Loop Demand Side Inlet Branch",
                 pipeName: "pipe 1",
-                pipeConstructionName: pipeConstruction1,
+                pipeConstructionName: indoorPipeConstructionName,
                 pipeInsideDiameter: 0.03,
                 pipeLength: 30);
 
-            AddIndoorPipe(
+            AddIndoorPipeToBranch(
                 reader: idfReader,
                 zoneName: "BASEMENT:ZONE1",
                 branchName: "HW Loop Demand Side Outlet Branch",
                 pipeName: "pipe 2",
-                pipeConstructionName: pipeConstruction1,
+                pipeConstructionName: indoorPipeConstructionName,
                 pipeInsideDiameter: 0.03,
                 pipeLength: 30);
 
-            AddOutdoorPipe(
+            AddOutdoorPipeToBranch(
                 reader: idfReader,
                 branchName: "HW Loop Supply Side Inlet Branch",
                 pipeName: "pipe 3",
-                pipeConstructionName: pipeConstruction2,
+                pipeConstructionName: outdoorPipeConstructionName,
                 pipeInsideDiameter: 0.03,
                 pipeLength: 50);
 
-            AddOutdoorPipe(
+            AddOutdoorPipeToBranch(
                 reader: idfReader,
                 branchName: "HW Loop Supply Side Outlet Branch",
                 pipeName: "pipe 4",
-                pipeConstructionName: pipeConstruction2,
+                pipeConstructionName: outdoorPipeConstructionName,
                 pipeInsideDiameter: 0.03,
                 pipeLength: 50);
-
 
             idfReader.Save();
         }
 
-        public IdfObject FindObject(IdfReader reader, string objectType, string objectName)
+        private IdfObject GetRequiredObject(IdfReader reader, string objectType, string objectName)
         {
             try
             {
                 return reader[objectType].First(c => c[0] == objectName);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw new MissingFieldException(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
+                throw new MissingFieldException(
+                    string.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
             }
         }
 
-        public void UpdatePlantLoopNode(IdfReader reader, string originalOutletNodeName, string newNodeName)
+        // Updates PlantLoop outlet node name fields if they match a provided node name.
+        private void UpdatePlantLoopOutletNodeReferences(IdfReader reader, string oldOutletNodeName, string newOutletNodeName)
         {
-            string[] fieldNames = new string[] { "Plant Side Outlet Node Name", "Demand Side Outlet Node Name" };
+            string[] plantLoopOutletFieldNames = new string[]
+            {
+                "Plant Side Outlet Node Name",
+                "Demand Side Outlet Node Name"
+            };
+
             foreach (var plantLoop in reader["PlantLoop"])
             {
-                foreach (var fieldName in fieldNames)
+                foreach (var fieldName in plantLoopOutletFieldNames)
                 {
-                    if (string.Equals(plantLoop[fieldName].Value, originalOutletNodeName,
-                            StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(plantLoop[fieldName].Value, oldOutletNodeName, StringComparison.OrdinalIgnoreCase))
                     {
-                        plantLoop[fieldName].Value = newNodeName;
+                        plantLoop[fieldName].Value = newOutletNodeName;
                     }
                 }
             }
         }
 
-
-        public string GetIndoorPipe(string name, string inletNodeName, string outletNodeName, string pipeConstructionName, string zoneName, double pipeInsideDiameter, double pipeLength)
+        private string BuildIndoorPipeIdfText(
+            string pipeName,
+            string inletNodeName,
+            string outletNodeName,
+            string pipeConstructionName,
+            string zoneName,
+            double pipeInsideDiameter,
+            double pipeLength)
         {
-            string pipe = @"  Pipe:Indoor,
+            string pipeTemplate = @"  
+Pipe:Indoor,
     {0},                     !- Name
     {1},                     !- Construction Name
     {2},                     !- Fluid Inlet Node Name
@@ -109,12 +158,29 @@ namespace DB.Extensibility.Scripts
     ,                        !- Ambient Air Velocity Schedule Name
     {5},                     !- Pipe Inside Diameter m
     {6};                     !- Pipe Length m";
-            return String.Format(pipe, name, pipeConstructionName, inletNodeName, outletNodeName, zoneName, pipeInsideDiameter, pipeLength);
+
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                pipeTemplate,
+                pipeName,
+                pipeConstructionName,
+                inletNodeName,
+                outletNodeName,
+                zoneName,
+                pipeInsideDiameter,
+                pipeLength);
         }
 
-        public string GetOutdoorPipe(string name, string inletNodeName, string outletNodeName, string pipeConstructionName, double pipeInsideDiameter, double pipeLength)
+        private string BuildOutdoorPipeIdfText(
+            string pipeName,
+            string inletNodeName,
+            string outletNodeName,
+            string pipeConstructionName,
+            double pipeInsideDiameter,
+            double pipeLength)
         {
-            string pipe = @"  Pipe:Outdoor,
+            string pipeTemplate = @"  
+Pipe:Outdoor,
     {0},                    !- Construction Name
     {1},                    !- Fluid Inlet Node Name
     {2},                    !- Fluid Outlet Node Name
@@ -123,25 +189,50 @@ namespace DB.Extensibility.Scripts
     {4},                    !- Pipe Inside Diameter
     {5};                    !- pipe length
 
-  OutdoorAir:Node,
+OutdoorAir:Node,
     {0} Outdoor Air Node;   !- Name";
-            return String.Format(pipe, name, pipeConstructionName, inletNodeName, outletNodeName, pipeInsideDiameter, pipeLength);
+
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                pipeTemplate,
+                pipeName,
+                pipeConstructionName,
+                inletNodeName,
+                outletNodeName,
+                pipeInsideDiameter,
+                pipeLength);
         }
 
-
-        public void AddIndoorPipe(IdfReader reader, string zoneName, string branchName, string pipeName, string pipeConstructionName, double pipeInsideDiameter, double pipeLength)
+        private void AddIndoorPipeToBranch(
+            IdfReader reader,
+            string zoneName,
+            string branchName,
+            string pipeName,
+            string pipeConstructionName,
+            double pipeInsideDiameter,
+            double pipeLength)
         {
             try
             {
-                IdfObject branch = FindObject(reader, "Branch", branchName);
+                IdfObject branch = GetRequiredObject(reader, "Branch", branchName);
+
+                // NOTE: This assumes the last field in the Branch is the node name to use as the pipe inlet node.
                 string inletNodeName = branch[branch.Count - 1].Value;
-                string outletNodeName = pipeName + " Outlet Node";
-                string pipe = GetIndoorPipe(pipeName, inletNodeName, outletNodeName, pipeConstructionName, zoneName, pipeInsideDiameter, pipeLength);
+                string newOutletNodeName = pipeName + " Outlet Node";
 
-                UpdatePlantLoopNode(reader, inletNodeName, outletNodeName);
+                string pipeIdfText = BuildIndoorPipeIdfText(
+                    pipeName,
+                    inletNodeName,
+                    newOutletNodeName,
+                    pipeConstructionName,
+                    zoneName,
+                    pipeInsideDiameter,
+                    pipeLength);
 
-                branch.AddFields("Pipe:Indoor", pipeName, inletNodeName, outletNodeName);
-                reader.Load(pipe);
+                UpdatePlantLoopOutletNodeReferences(reader, inletNodeName, newOutletNodeName);
+
+                branch.AddFields("Pipe:Indoor", pipeName, inletNodeName, newOutletNodeName);
+                reader.Load(pipeIdfText);
             }
             catch (Exception e)
             {
@@ -149,19 +240,36 @@ namespace DB.Extensibility.Scripts
             }
         }
 
-        public void AddOutdoorPipe(IdfReader reader, string branchName, string pipeName, string pipeConstructionName, double pipeInsideDiameter, double pipeLength)
+        private void AddOutdoorPipeToBranch(
+            IdfReader reader,
+            string branchName,
+            string pipeName,
+            string pipeConstructionName,
+            double pipeInsideDiameter,
+            double pipeLength)
         {
             try
             {
-                IdfObject branch = FindObject(reader, "Branch", branchName);
+                IdfObject branch = GetRequiredObject(reader, "Branch", branchName);
+
+                // NOTE: This assumes the last field in the Branch is the node name to use as the pipe inlet node.
                 string inletNodeName = branch[branch.Count - 1].Value;
-                string outletNodeName = pipeName + " Outlet Node";
-                string pipe = GetOutdoorPipe(pipeName, inletNodeName, outletNodeName, pipeConstructionName, pipeInsideDiameter, pipeLength);
 
-                UpdatePlantLoopNode(reader, inletNodeName, outletNodeName);
+                string newOutletNodeName = pipeName + " Outlet Node";
 
-                branch.AddFields("Pipe:Outdoor", pipeName, inletNodeName, outletNodeName);
-                reader.Load(pipe);
+                string pipeIdfText = BuildOutdoorPipeIdfText(
+                    pipeName,
+                    inletNodeName,
+                    newOutletNodeName,
+                    pipeConstructionName,
+                    pipeInsideDiameter,
+                    pipeLength);
+
+                // Redirect PlantLoop outlet node references if they match the old node
+                UpdatePlantLoopOutletNodeReferences(reader, inletNodeName, newOutletNodeName);
+
+                branch.AddFields("Pipe:Outdoor", pipeName, inletNodeName, newOutletNodeName);
+                reader.Load(pipeIdfText);
             }
             catch (Exception e)
             {
@@ -169,16 +277,19 @@ namespace DB.Extensibility.Scripts
             }
         }
 
-        public void AddInsulatedPipe(IdfReader reader, string pipeConstructionName, double insulationThickness)
+        private void AddInsulatedPipeConstruction(IdfReader reader, string pipeConstructionName, double insulationThickness)
         {
-            string pipeInsulationName = pipeConstructionName + " insulation";
-            string pipeSteelName = pipeConstructionName + " steel";
-            string pipeConstructionTemplate = @"  Construction,
+            // Construction is composed of an insulation layer + steel layer
+            string pipeInsulationMaterialName = pipeConstructionName + " insulation";
+            string pipeSteelMaterialName = pipeConstructionName + " steel";
+
+            string pipeConstructionTemplate = @"  
+Construction,
     {0},                     !-Name
     {1},                     !-Outside Layer
     {2};                     !-Layer 2
 
-  Material,
+Material,
     {1},                     !- Name
     VeryRough,               !- Roughness
     {3},                     !- Thickness m
@@ -189,7 +300,7 @@ namespace DB.Extensibility.Scripts
     0.5,                     !- Solar Absorptance
     0.5;                     !- Visible Absorptance
 
-  Material,
+Material,
     {2},                     !- Name
     Smooth,                  !- Roughness
     3.00E-03,                !- Thickness m
@@ -199,10 +310,17 @@ namespace DB.Extensibility.Scripts
     0.9,                     !- Thermal Absorptance
     0.5,                     !- Solar Absorptance
     0.5;                     !- Visible Absorptance
-
 ";
-            string pipeConstruction = String.Format(pipeConstructionTemplate, pipeConstructionName, pipeInsulationName, pipeSteelName, insulationThickness);
-            reader.Load(pipeConstruction);
+
+            string pipeConstructionIdfText = string.Format(
+                CultureInfo.InvariantCulture,
+                pipeConstructionTemplate,
+                pipeConstructionName,
+                pipeInsulationMaterialName,
+                pipeSteelMaterialName,
+                insulationThickness);
+
+            reader.Load(pipeConstructionIdfText);
         }
     }
 }

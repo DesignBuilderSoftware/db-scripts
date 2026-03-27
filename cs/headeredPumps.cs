@@ -1,18 +1,35 @@
 /*
-This script replaces Pump:VariableSpeed and Pump:ConstantSpeed objects with their
-headered equivalents.
+Headered Pump Replacement Script
 
-All pump attributes are cherry-picked from DesignBuilder HVAC layout.
+Purpose:
+This DesignBuilder C# script converts standard Pump:VariableSpeed and Pump:ConstantSpeed pump objects into headered pump equivalents (HeaderedPumps:*).
 
+Main Steps:
+For each configured pump:
+1) Locate the original Pump:* object by name.
+2) Create an equivalent HeaderedPumps:* object by taking fields from the original pump.
+3) Update references in Branch objects from Pump:* to HeaderedPumps:* for the same pump name.
+4) Insert (Load) the new HeaderedPumps:* object and remove the original Pump:* object.
+
+How to Use:
+
+Configuration
+- Configure pumps to be replaced (pumpType, pumpName, number of pumps in headered pump bank)
+- All pump attributes are taken from DesignBuilder User Interface (HVAC layout).
+
+Prerequisites / Placeholders
+The base model must already contain the target pump objects:
+- Pump:ConstantSpeed and/or Pump:VariableSpeed with names matching your configuration.
+
+DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes no responsibility for simulation results, accuracy, or any issues arising from the use of this script. 
+Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
-using System.Runtime;
+
 using System.Linq;
 using System.Collections.Generic;
 using System;
-using System.Windows.Forms;
 using DB.Extensibility.Contracts;
 using EpNet;
-
 
 namespace DB.Extensibility.Scripts
 {
@@ -20,52 +37,70 @@ namespace DB.Extensibility.Scripts
     {
         public override void BeforeEnergySimulation()
         {
-            IdfReader idfReader = new IdfReader(
+            IdfReader idf = new IdfReader(
                 ApiEnvironment.EnergyPlusInputIdfPath,
                 ApiEnvironment.EnergyPlusInputIddPath);
 
-            // define pumps to be replaced
-            ReplacePump(idfReader, "Pump:ConstantSpeed", "HW Loop Supply Pump", nPumpsInBank: 3);
-            ReplacePump(idfReader, "Pump:VariableSpeed", "CHW Loop Supply Pump", nPumpsInBank: 3);
+            // ----------------------------
+            // USER CONFIGURATION SECTION
+            // ----------------------------
+            // Configure pumps to be replaced (pumpType, pumpName, pumps-in-bank)
+            ReplacePump(idf, "Pump:ConstantSpeed", "HW Loop Supply Pump", nPumpsInBank: 3);
+            ReplacePump(idf, "Pump:VariableSpeed", "CHW Loop Supply Pump", nPumpsInBank: 3);
 
-            idfReader.Save();
+            idf.Save();
         }
-        public IdfObject FindObject(IdfReader reader, string objectType, string objectName)
+
+        public IdfObject FindObject(IdfReader idf, string objectType, string objectName)
         {
             try
             {
-                return reader[objectType].First(c => c[0] == objectName);
+                return idf[objectType].First(c => c[0] == objectName);
             }
-            catch(Exception e)
+            catch (Exception)
             {
                 throw new Exception(String.Format("Cannot find object: {0}, type: {1}", objectName, objectType));
             }
         }
 
-        public void ReplacePump(IdfReader reader, string pumpType, string pumpName, int nPumpsInBank)
+        public void ReplacePump(IdfReader idf, string pumpType, string pumpName, int nPumpsInBank)
         {
-            IdfObject pump = FindObject(reader, pumpType, pumpName);
-            string headeredPump;
+            // Locate the original pump placeholder object
+            IdfObject pump = FindObject(idf, pumpType, pumpName);
 
-            if (pumpType.ToLower() == "pump:variablespeed")
+            // Build the replacement HeaderedPumps:* IDF text from the original pump fields
+            string headeredPumpIdfText;
+            string pumpTypeLower = pumpType.ToLower();
+
+            if (pumpTypeLower == "pump:variablespeed")
             {
-                headeredPump = GetVariablePump(pump, nPumpsInBank);
-                ReplaceObjectTypeInList(reader, "Branch", "Pump:VariableSpeed", pumpName, "HeaderedPumps:VariableSpeed", pumpName);
+                headeredPumpIdfText = GetVariablePump(pump, nPumpsInBank);
+
+                // Update Branch references from Pump:VariableSpeed -> HeaderedPumps:VariableSpeed (same name)
+                ReplaceObjectTypeInList(idf, "Branch", "Pump:VariableSpeed", pumpName, "HeaderedPumps:VariableSpeed", pumpName);
             }
-            else if (pumpType.ToLower() == "pump:constantspeed")
+            else if (pumpTypeLower == "pump:constantspeed")
             {
-                headeredPump = GetConstantPump(pump, nPumpsInBank);
-                ReplaceObjectTypeInList(reader, "Branch", "Pump:ConstantSpeed", pumpName, "HeaderedPumps:ConstantSpeed", pumpName);
-            } else {
+                headeredPumpIdfText = GetConstantPump(pump, nPumpsInBank);
+
+                // Update Branch references from Pump:ConstantSpeed -> HeaderedPumps:ConstantSpeed (same name)
+                ReplaceObjectTypeInList(idf, "Branch", "Pump:ConstantSpeed", pumpName, "HeaderedPumps:ConstantSpeed", pumpName);
+            }
+            else
+            {
                 throw new Exception(String.Format("Invalid pump type {0}", pumpType));
             }
-            reader.Load(headeredPump);
-            reader.Remove(pump);
+
+            // Insert the new headered pump object, then remove the original pump object to avoid duplicates
+            idf.Load(headeredPumpIdfText);
+            idf.Remove(pump);
         }
 
         public string GetConstantPump(IdfObject pump, int nPumpsInBank)
         {
-        string headeredPump = @"HeaderedPumps:ConstantSpeed,
+            // Maps fields from Pump:ConstantSpeed into HeaderedPumps:ConstantSpeed (by position)
+            string headeredPumpTemplate = @"
+HeaderedPumps:ConstantSpeed,
   {0},           !- Name
   {1},           !- Inlet Node Name
   {2},           !- Outlet Node Name
@@ -77,12 +112,17 @@ namespace DB.Extensibility.Scripts
   {7},           !- Motor Efficiency
   {8},           !- Fraction of Motor Inefficiencies to Fluid Stream
   {9};           !- Pump Control Type";
-         return String.Format(headeredPump, pump[0].Value, pump[1].Value, pump[2].Value, pump[3].Value, nPumpsInBank.ToString(), pump[4].Value, pump[5].Value, pump[6].Value, pump[7].Value, pump[8].Value);
+
+            return String.Format(
+                headeredPumpTemplate,
+                pump[0].Value, pump[1].Value, pump[2].Value, pump[3].Value, nPumpsInBank.ToString(), pump[4].Value, pump[5].Value, pump[6].Value, pump[7].Value, pump[8].Value);
         }
 
         public string GetVariablePump(IdfObject pump, int nPumpsInBank)
         {
-        string headeredPump = @"HeaderedPumps:VariableSpeed,
+            // Maps fields from Pump:VariableSpeed into HeaderedPumps:VariableSpeed (by position)
+            string headeredPumpTemplate = @"      
+HeaderedPumps:VariableSpeed,
   {0},           !- Name
   {1},           !- Inlet Node Name
   {2},           !- Outlet Node Name
@@ -100,17 +140,18 @@ namespace DB.Extensibility.Scripts
   {13},          !- Minimum Flow Rate m3/s
   {14};          !- Pump Control Type";
 
-
-         return String.Format(headeredPump, pump[0].Value, pump[1].Value, pump[2].Value, pump[3].Value, nPumpsInBank, pump[4].Value, pump[5].Value, pump[6].Value, pump[7].Value, pump[8].Value, pump[9].Value, pump[10].Value, pump[11].Value, pump[12].Value, pump[13].Value);
+            return String.Format(
+                headeredPumpTemplate,
+                pump[0].Value, pump[1].Value, pump[2].Value, pump[3].Value, nPumpsInBank, pump[4].Value, pump[5].Value, pump[6].Value, pump[7].Value, pump[8].Value, pump[9].Value, pump[10].Value, pump[11].Value, pump[12].Value, pump[13].Value);
         }
 
-        private void ReplaceObjectTypeInList(IdfReader idfReader, string listName, string oldObjectType, string oldObjectName, string newObjectType, string newObjectName)
+        private void ReplaceObjectTypeInList(IdfReader idf, string listName, string oldObjectType, string oldObjectName, string newObjectType, string newObjectName)
         {
-            IEnumerable<IdfObject> allEquipment = idfReader[listName];
-
+            // This scans objects of type listName (currently used with "Branch") and replaces (type,name) pairs in fields
+            IEnumerable<IdfObject> listObjects = idf[listName];
             bool objectFound = false;
 
-            foreach (IdfObject equipment in allEquipment)
+            foreach (IdfObject equipment in listObjects)
             {
                 if (!objectFound)
                 {
@@ -119,7 +160,8 @@ namespace DB.Extensibility.Scripts
                         Field field = equipment[i];
                         Field nextField = equipment[i + 1];
 
-                        if (field.Value.ToLower() == oldObjectType.ToLower() && nextField.Value.ToLower() == oldObjectName.ToLower())
+                        if (field.Value.ToLower() == oldObjectType.ToLower() &&
+                            nextField.Value.ToLower() == oldObjectName.ToLower())
                         {
                             field.Value = newObjectType;
                             nextField.Value = newObjectName;
