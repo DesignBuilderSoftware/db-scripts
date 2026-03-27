@@ -53,9 +53,26 @@ namespace DB.Extensibility.Scripts
         // Activity Template names treated as "residential"
         private readonly List<string> _residentialActivityTemplateNames = new List<string>
         {
-            "Domestic Bedroom",
-            "Domestic Bathroom",
-            "Domestic Kitchen"
+            "Barracks 62 days- Dwelling Units, LEED, Elect (AD",
+            "Multifamily - Dwelling Units, Code, Elect (AD)",
+            "Residential Parking - ASHRAE (AD)",
+            "Residential - Corridor (24/7) - (AD)",
+            "Residential - Corridor (Reduced) - (AD)",
+            "Residential - Stair (Freeze Pro) - (AD)",
+            "Residential - Lobby Space (AD)",
+            "Residential - Corridor (OS) - (AD)",
+            "Fitness Space 17hr (AD)",
+            "Multifamily - Dweling Units, Code, Gas (AD)",
+            "Multifamily - Dwelling, Gas, 75F/70F (AD)",
+            "Multifamily - Dwelling, AEGB, Elect (AD)",
+            "Multifamily - Dwelling, AEGB, Gas (AD)",
+            "Residential Parking - LEED (AD)",
+            "Dorm - Rooms, 75F/70F, LEED (AD)",
+            "Dorm - Rooms, 75F/70F, LEED (AD)-REV",
+            "Attic (Freeze Pro) - (AD)",
+            "Multifamily - Dwelling Units, LEED, Elect (AD)",
+            "Multifamily - Dwelling Units, LEED, Gas (AD)",
+            "SM-Multifamily - Dwelling Units, LEED, ES, Gas (AD)",
         };
 
         // Attribute / table / column names in the DB data model
