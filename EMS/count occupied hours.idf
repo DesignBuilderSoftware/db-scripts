@@ -1,0 +1,43 @@
+! Calculate number of hours of occupancy for each zone
+
+<ForAllOccupiedZones>
+EnergyManagementSystem:Sensor,
+   People_Occupant_Count_<LoopZoneVariableName>,
+   People <LoopZoneIDFName>,
+   People Occupant Count;
+
+EnergyManagementSystem:OutputVariable,
+   Number of hours <LoopZoneIDFName>,
+   n_hours_<LoopZoneVariableName>,
+   Summed,
+   ZoneTimeStep,
+   CountHours,
+   [-];
+
+Output:Variable,
+   *,
+   Number of hours <LoopZoneIDFName>,
+   hourly;
+
+Output:Variable,
+   *,
+   Number of hours <LoopZoneIDFName>,
+   runperiod;
+<LoopNextZone>
+
+
+EnergyManagementSystem:ProgramCallingManager,
+   Caller,
+   EndOfZoneTimestepAfterZoneReporting,
+    CountHours;
+
+EnergyManagementSystem:Program,
+    CountHours,
+<ForAllOccupiedZones>
+    IF People_Occupant_Count_<LoopZoneVariableName> > 0,
+       SET n_hours_<LoopZoneVariableName> = ZoneTimestep,
+    ELSE,
+       SET n_hours_<LoopZoneVariableName> = 0,
+    ENDIF,
+<LoopNextZone>
+   ;

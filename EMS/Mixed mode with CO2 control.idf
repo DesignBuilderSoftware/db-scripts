@@ -1,0 +1,140 @@
+! The following EMS code introduces mixed mode CO2 control.
+!
+! Zone windows fully open when the zone CO2 level exceeds a setpoint (1000ppm) and ventilation through opening is allowed.
+! Unless the "HVAC_Override" schedule is active (value > 0), the zone HVAC system is disabled.
+!
+! Program requires:
+!   - Calculated natural ventilation
+!   - CO2 control switched on at site level
+!
+
+<ForAllExternalWindows>
+! read window opening availability
+<If LoopWindowAttribute ExtWinCOMISScheduleDefinition = 2-Customschedule Then>
+EnergyManagementSystem:Sensor,
+   Window_Availability_<LoopWindowVariableName>,
+   <LoopWindowAttribute ExtWinCOMISSchedule>,
+   Schedule Value;
+<Endif>
+
+<If LoopWindowAttribute ExtWinCOMISScheduleDefinition = 1-Followoccupancy Then>
+EnergyManagementSystem:Sensor,
+   Window_Availability_<LoopWindowVariableName>,
+   <LoopWindowZoneAttribute OccupancySchedule>,
+   Schedule Value;
+<Endif>
+
+EnergyManagementSystem:Actuator,
+   Venting_Opening_Factor_<LoopWindowVariableName>,
+   <LoopWindowIDFName>,
+   AirFlow Network Window/Door Opening,
+   Venting Opening Factor;
+<LoopNextWindow>
+
+<ForAllZones>
+! define zone sensors
+EnergyManagementSystem:Sensor,
+   Air_CO2_Concentration_<LoopZoneVariableName>,
+   <LoopZoneIDFName>,
+   Zone Air CO2 Concentration;
+
+! define zone actuators
+<If LoopZoneAttribute ActiveCoolingOn = 1 Then>
+EnergyManagementSystem:Actuator,
+   Cooling_Setpoint_<LoopZoneVariableName>,
+   <LoopZoneIDFName>,
+   Zone Temperature Control,
+   Cooling Setpoint;
+<Endif>
+
+<If LoopZoneAttribute HeatingOn = 1 Then>
+EnergyManagementSystem:Actuator,
+   Heating_Setpoint_<LoopZoneVariableName>,
+   <LoopZoneIDFName>,
+   Zone Temperature Control,
+   Heating Setpoint;
+<Endif>
+<LoopNextZone>
+
+
+! extra outputs for viewing in the results viewer
+<If BuildingAttribute HourlyOutput = 1 Then>
+Output:Variable, *, Zone Air CO2 Concentration, hourly; 
+<Endif>
+<If BuildingAttribute TimesteplyOutput = 1 Then>
+Output:Variable, *, Zone Air CO2 Concentration, timestep; 
+<Endif>
+
+! define global variables
+EnergyManagementSystem:GlobalVariable, CO2_SETPOINT;
+
+! HVAC override schedule
+Schedule:Compact, 
+   HVAC_Override,                              ! Name
+   Any Number,                                 ! Type
+   Through: 12/31,                             ! Type
+   For: AllDays,                               ! All days in year
+   Until: 24:00,                               ! All hours in day
+   0;
+
+EnergyManagementSystem:Sensor,
+   HVAC_Override,
+   HVAC_Override,
+   Schedule Value;
+
+! initialize variables
+EnergyManagementSystem:ProgramCallingManager,
+   InitCaller,
+   BeginTimestepBeforePredictor,
+   InitializeVariables;
+
+EnergyManagementSystem:Program,
+    InitializeVariables,
+   SET CO2_SETPOINT = 1000;
+
+
+! control HVAC + windows
+EnergyManagementSystem:ProgramCallingManager,
+   CO2 Window Control,
+   InsideHVACSystemIterationLoop,
+   CO2WindowControl;
+
+EnergyManagementSystem:Program,
+   CO2WindowControl,
+<ForAllZones>
+   IF Air_CO2_Concentration_<LoopZoneVariableName> > CO2_SETPOINT,
+      ! disable HVAC
+<If LoopZoneAttribute HeatingOn = 1 Then>
+      IF HVAC_Override > 0,
+          SET Heating_Setpoint_<LoopZoneVariableName> = null,
+      ELSE,
+          SET Heating_Setpoint_<LoopZoneVariableName> = -50,
+      ENDIF,
+<Endif>
+<If LoopZoneAttribute ActiveCoolingOn = 1 Then>
+      IF HVAC_Override > 0,
+         SET Cooling_Setpoint_<LoopZoneVariableName> = null,
+      ELSE,
+         SET Cooling_Setpoint_<LoopZoneVariableName> = 100,
+      ENDIF,
+<EndIf>
+      SET Nat_Vent_<LoopZoneVariableName> = True,
+   ELSE,
+<If LoopZoneAttribute HeatingOn = 1 Then>
+      SET Heating_Setpoint_<LoopZoneVariableName> = null,
+<Endif>
+<If LoopZoneAttribute ActiveCoolingOn = 1 Then>
+      SET Cooling_Setpoint_<LoopZoneVariableName> = null,
+<EndIf>
+      SET Nat_Vent_<LoopZoneVariableName> = False,
+   ENDIF,
+<LoopNextZone>
+
+<ForAllExternalWindows>
+   ! on/off control of window opening factor
+   IF Nat_Vent_<LoopWindowZoneVariableName> && Window_Availability_<LoopWindowVariableName> > 0,
+      SET Venting_Opening_Factor_<LoopWindowVariableName> = 1,
+   ELSE,
+      SET Venting_Opening_Factor_<LoopWindowVariableName> = 0,
+   ENDIF,
+<LoopNextWindow>;

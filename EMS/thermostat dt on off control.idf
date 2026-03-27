@@ -1,0 +1,121 @@
+! Default EnergyPlus thermostat works with a discrete setpoint temperature
+! This EMS script introduces a dynamic control to turn heating ON at a specific setpoint and turn it OFF once the setpoint + dT is exceeded
+!
+! Example 22C setpoint, dT 2degrees, offset 0.1
+! Heating starts to meet 24.1C setpoint (22 + 2 + 0.1) and stops once 24C is exceeded (the offset works as a safety factor)
+! Once the setpoint is met, heating setpoint is reduced to 21.9C (22 - 0.1).
+! When temperature drops below 22C, heating setpoint increases to 24.1C again
+!
+! Note that the script applies only to the "Simple HVAC" and "Detailed HVAC" > "Simple Data" mode (where DesignBuilder generates zone-specific themorstat schedules).
+
+EnergyManagementSystem:Program,
+   InitializeVariables,
+   ! setpoint range is calculated as the setpoint temperature + dT
+   SET dT = 2,
+   SET offset = 0.1;
+
+<ForAllZones>
+<If LoopZoneAttribute HeatingOn = 1 Then>
+EnergyManagementSystem:Sensor,
+   Zone_Mean_Air_Temperature_<LoopZoneVariableName>,
+   <LoopZoneIDFName>,
+   Zone Mean Air Temperature;
+
+EnergyManagementSystem:Sensor,
+   Heating_Setpoint_Schedule_Value_<LoopZoneVariableName>,
+   <LoopZoneIDFName> Heating Setpoint Schedule,
+   Schedule Value;
+
+EnergyManagementSystem:Actuator,
+   Heating_Setpoint_<LoopZoneVariableName>,
+   <LoopZoneIDFName>,
+   Zone Temperature Control,
+   Heating Setpoint;
+
+EnergyManagementSystem:TrendVariable,
+  Trend_Zone_Mean_Air_Temperature_<LoopZoneVariableName>,
+  Zone_Mean_Air_Temperature_<LoopZoneVariableName>,
+  2;
+
+EnergyManagementSystem:TrendVariable,
+  Trend_Heating_Setpoint_Schedule_Value_<LoopZoneVariableName>,
+  Heating_Setpoint_Schedule_Value_<LoopZoneVariableName>,
+  2;
+
+Output:Variable, <LoopZoneIDFName> Heating Setpoint Schedule, Schedule Value, Timestep;
+
+EnergyManagementSystem:OutputVariable,
+   Previous Temp Schedule Value <LoopZoneIDFName>,
+   Previous_Temp_Schedule_Value_<LoopZoneVariableName>,
+   Averaged,
+   ZoneTimeStep,
+   SetTemperature,
+   [C];
+
+Output:Variable, *, Previous Temp Schedule Value <LoopZoneIDFName>, Timestep;
+
+EnergyManagementSystem:OutputVariable,
+   Previous Temp <LoopZoneIDFName>,
+   Previous_Temp_<LoopZoneVariableName>,
+   Averaged,
+   ZoneTimeStep,
+   SetTemperature,
+   [C];
+
+Output:Variable, *, Previous Temp <LoopZoneIDFName>, Timestep;
+<Endif>
+<LoopNextZone>
+
+
+EnergyManagementSystem:GlobalVariable, dT;
+EnergyManagementSystem:GlobalVariable, offset;
+
+! debug outputs
+Output:Variable, *, Zone Mean Air Temperature, Timestep;
+Output:Variable, *, Zone Thermostat Heating Setpoint Temperature, Timestep;
+
+
+
+EnergyManagementSystem:ProgramCallingManager,
+   InitCaller,
+   BeginNewEnvironment,
+   InitializeVariables;
+
+
+EnergyManagementSystem:ProgramCallingManager,
+   Caller,
+   BeginTimestepBeforePredictor,
+   SetTemperature;
+
+EnergyManagementSystem:Program,
+    SetTemperature,
+<ForAllZones>
+<If LoopZoneAttribute HeatingOn = 1 Then>
+    SET High_Heating_Threshold_<LoopZoneVariableName> = Heating_Setpoint_Schedule_Value_<LoopZoneVariableName> + dT,
+    SET Low_Heating_Threshold_<LoopZoneVariableName> = Heating_Setpoint_Schedule_Value_<LoopZoneVariableName>,
+    SET High_Heating_Setpoint_<LoopZoneVariableName> = Heating_Setpoint_Schedule_Value_<LoopZoneVariableName> + dT + offset,
+    SET Low_Heating_Setpoint_<LoopZoneVariableName> = Heating_Setpoint_Schedule_Value_<LoopZoneVariableName> - offset,
+
+    SET Previous_Temp_Schedule_Value_<LoopZoneVariableName> = @TrendValue Trend_Heating_Setpoint_Schedule_Value_<LoopZoneVariableName> 1,
+    SET Previous_Temp_<LoopZoneVariableName> = @TrendValue Trend_Zone_Mean_Air_Temperature_<LoopZoneVariableName> 1,
+
+    SET Setpoint_Diff_<LoopZoneVariableName> = Previous_Temp_Schedule_Value_<LoopZoneVariableName> - Heating_Setpoint_Schedule_Value_<LoopZoneVariableName>,
+
+    ! check if thermostat setpoint temperature changes
+    IF Setpoint_Diff_<LoopZoneVariableName> > 0,
+       ! setpoint tempereture drops
+       SET Heating_Setpoint_<LoopZoneVariableName> = Low_Heating_Setpoint_<LoopZoneVariableName>,
+    ELSEIF Setpoint_Diff_<LoopZoneVariableName> < 0,
+       ! setpoint temperature increases
+       SET Heating_Setpoint_<LoopZoneVariableName> = High_Heating_Setpoint_<LoopZoneVariableName>,
+    ELSE,
+       IF Previous_Temp_<LoopZoneVariableName> >= High_Heating_Threshold_<LoopZoneVariableName>,
+          SET Heating_Setpoint_<LoopZoneVariableName> = Low_Heating_Setpoint_<LoopZoneVariableName>,
+       ELSEIF Previous_Temp_<LoopZoneVariableName> <= Low_Heating_Threshold_<LoopZoneVariableName>,
+          SET Heating_Setpoint_<LoopZoneVariableName> = High_Heating_Setpoint_<LoopZoneVariableName>,
+       ENDIF,
+    ENDIF,
+<Endif>
+<LoopNextZone>
+;
+

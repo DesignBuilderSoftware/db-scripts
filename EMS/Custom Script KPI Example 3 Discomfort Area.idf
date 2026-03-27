@@ -1,0 +1,64 @@
+! Calculate floor-area-weighted discomfort of the building
+! https://designbuilder.co.uk/helpv7.2/#PythonScriptingExample3.htm
+
+<ForAllOccupiedZones>
+EnergyManagementSystem:Sensor,
+   <LoopZoneVariableName>OccSchedule_PPD,
+   <LoopZoneAttribute OccupancySchedule>,
+   Schedule Value;
+
+EnergyManagementSystem:Sensor,
+   PPD_<LoopZoneVariableName>,
+   PEOPLE <LoopZoneIDFName>,
+   Zone Thermal Comfort Fanger Model PPD;
+
+EnergyManagementSystem:InternalVariable,
+   Area_<LoopZoneVariableName>,
+   <LoopZoneIDFName>,
+   Zone Floor Area;
+<LoopNextZone>
+
+EnergyManagementSystem:ProgramCallingManager,
+   Fanger PPD Discomfort Area,
+   EndOfZoneTimestepBeforeZoneReporting,
+   FangerDiscomfortArea;
+
+EnergyManagementSystem:GlobalVariable,
+   PercentageDiscomfortArea;
+
+EnergyManagementSystem:OutputVariable,
+   Percentage Discomfort Area [%],
+   PercentageDiscomfortArea,
+   Averaged,
+   ZoneTimeStep;
+
+EnergyManagementSystem:Program,
+   FangerDiscomfortArea,
+   SET SumNumerator = 0,
+   SET SumDenominator = 0,
+<ForAllOccupiedZones>,
+   IF <LoopZoneVariableName>OccSchedule_PPD > 0.25,
+      IF PPD_<LoopZoneVariableName> > 20,
+         SET SumNumerator = SumNumerator + Area_<LoopZoneVariableName>,
+      ENDIF,
+      SET SumDenominator = SumDenominator + Area_<LoopZoneVariableName>,
+   ENDIF,
+<LoopNextZone>
+   IF SumDenominator > 0,
+      SET PercentageDiscomfortArea = (SumNumerator / SumDenominator)*100,
+   ENDIF;
+
+! provide outputs based on DB output settings
+<If BuildingAttribute TimesteplyOutput = 1 Then>
+Output:Variable, *, Percentage Discomfort Area, timestep;
+<Endif>
+<If BuildingAttribute HourlyOutput = 1 Then>
+Output:Variable, *, Percentage Discomfort Area, hourly;
+<Endif>
+<If BuildingAttribute DailyOutput = 1 Then>
+Output:Variable, *, Percentage Discomfort Area, daily;
+<Endif>
+<If BuildingAttribute MonthlyOutput = 1 Then>
+Output:Variable, *, Percentage Discomfort Area, monthly;
+<Endif>
+Output:Variable, *, Percentage Discomfort Area, RunPeriod;

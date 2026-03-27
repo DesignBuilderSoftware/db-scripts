@@ -1,0 +1,30 @@
+! Hard set venting factor - works only for 'Custom' availability schedule
+
+<ForAllExternalWindows>
+EnergyManagementSystem:Actuator,
+   Venting_Opening_Factor_<LoopWindowVariableName>,
+   <LoopWindowIDFName>,
+   AirFlow Network Window/Door Opening,
+   Venting Opening Factor;
+
+EnergyManagementSystem:Sensor,
+   Schedule_Value_<LoopWindowVariableName>,
+   <LoopWindowDataFromAttribute ExtWinCOMISSchedule Name>,
+   Schedule Value;
+<LoopNextWindow>
+
+Output:Variable, *, AFN Surface Venting Window or Door Opening Factor, timestep;
+
+EnergyManagementSystem:ProgramCallingManager,
+   Caller,
+   BeginTimestepBeforePredictor,
+   ActuateVenting;
+
+EnergyManagementSystem:Program,
+   ActuateVenting,
+<ForAllExternalWindows>
+   SET Venting_Opening_Factor_<LoopWindowVariableName> = Schedule_Value_<LoopWindowVariableName>,
+<LoopNextWindow>
+   ;
+
+
