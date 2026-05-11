@@ -27,6 +27,7 @@ Users are responsible for validating all outputs and ensuring the script meets t
 */
 
 // < Required namespaces>
+using System.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Linq;
