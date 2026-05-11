@@ -30,6 +30,7 @@ Users are responsible for validating all outputs and ensuring the script meets t
 modeling requirements.
 */
 
+using System.Runtime;
 using System;
 using System.Globalization;
 using System.Linq;
