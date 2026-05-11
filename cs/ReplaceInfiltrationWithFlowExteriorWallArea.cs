@@ -1,6 +1,10 @@
 /*
 Infiltration Conversion Script (Flow/ExteriorWallArea)
 
+Version: 1.1
+Revision history:
+- Updated variable "Flow per Exterior Surface Area" to "Flow Rate per Exterior Surface Area"
+
 Purpose:
 This DesignBuilder C# script converts ZoneInfiltration:DesignFlowRate objects to use the "Flow/ExteriorWallArea" calculation method
 and populates the "Flow per Exterior Surface Area" field using the infiltration value defined in the DesignBuilder UI.
@@ -63,7 +67,7 @@ namespace DB.Extensibility.Scripts
                 zoneInfilObj["Design Flow Rate Calculation Method"].Value = "Flow/ExteriorWallArea";
 
                 // Convert from m3/h-m2 (DesignBuilder UI) to m3/sm2 (EnergyPlus field units)
-                zoneInfilObj["Flow per Exterior Surface Area"].Value =
+                zoneInfilObj["Flow Rate per Exterior Surface Area"].Value =
                     (double.Parse(zoneInfiltrationValueI4ByZoneName[zoneName]) / 3600.0).ToString();
             }
 
