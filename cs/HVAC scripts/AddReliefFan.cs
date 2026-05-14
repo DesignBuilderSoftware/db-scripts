@@ -50,6 +50,7 @@ DesignBuilder takes no responsibility for simulation results, accuracy, or any i
 Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
+using System.Runtime;
 using System;
 using System.Linq;
 using DB.Extensibility.Contracts;
