@@ -15,16 +15,18 @@ Main Steps:
 How to Use:
 
 Configuration
-- beginMonth / beginDay / beginYear: simulation start date (integer month/day/year).
-- endMonth / endDay / endYear: simulation end date (integer month/day/year).
-- dayOfWeek: EnergyPlus day-of-week string for the start day
+- MANDATORY: beginMonth / beginDay / beginYear: simulation start date (integer month/day/year). 
+- MANDATORY: endMonth / endDay / endYear: simulation end date (integer month/day/year).
+- OPTIONAL: dayOfWeek: EnergyPlus day-of-week string for the start day
     Valid values: "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
     "SummerSolstice", "WinterSolstice", "UseWeatherFile".
-- useWeatherFileHolidays: whether to import holidays from the weather file ("Yes" / "No").
-- useWeatherFileDst: whether to apply daylight saving from the weather file ("Yes" / "No").
-- applyWeekendHolidayRule: shift Saturday/Sunday holidays to Monday ("Yes" / "No").
-- useWeatherFileRain: apply rain indicators from the weather file ("Yes" / "No").
-- useWeatherFileSnow: apply snow indicators from the weather file ("Yes" / "No").
+- OPTIONAL: useWeatherFileHolidays: whether to import holidays from the weather file ("Yes" / "No").
+- OPTIONAL: useWeatherFileDst: whether to apply daylight saving from the weather file ("Yes" / "No").
+- OPTIONAL: applyWeekendHolidayRule: shift Saturday/Sunday holidays to Monday ("Yes" / "No").
+- OPTIONAL: useWeatherFileRain: apply rain indicators from the weather file ("Yes" / "No").
+- OPTIONAL: useWeatherFileSnow: apply snow indicators from the weather file ("Yes" / "No").
+
+For OPTIONAL values, pass null to inherit the value from the DesignBuilder-generated RunPeriod.
 
 Prerequisites / Placeholders
 - The simulation should run with "Simulation Manager" enabled.
@@ -63,12 +65,13 @@ namespace DB.Extensibility.Scripts
                 endMonth: 9,
                 endDay: 17,
                 endYear: 2019,
-                dayOfWeek: "Tuesday",
-                useWeatherFileHolidays: "No",
-                useWeatherFileDst: "Yes",
-                applyWeekendHolidayRule: "No",
-                useWeatherFileRain: "Yes",
-                useWeatherFileSnow: "Yes");
+                dayOfWeek: "Tuesday",                 // e.g. "Tuesday"  ? null = keep DB value
+                useWeatherFileHolidays: "No",    // e.g. "No"       ? null = keep DB value
+                useWeatherFileDst: "Yes",         // e.g. "Yes"      ? null = keep DB value
+                applyWeekendHolidayRule: "No",   // e.g. "No"       ? null = keep DB value
+                useWeatherFileRain: "Yes",        // e.g. "Yes"      ? null = keep DB value
+                useWeatherFileSnow: "Yes");       // e.g. "Yes"      ? null = keep DB value
+
 
             idfReader.Save();
         }
@@ -78,16 +81,24 @@ namespace DB.Extensibility.Scripts
             IdfReader idfReader,
             int beginMonth, int beginDay, int beginYear,
             int endMonth, int endDay, int endYear,
-            string dayOfWeek,
-            string useWeatherFileHolidays,
-            string useWeatherFileDst,
-            string applyWeekendHolidayRule,
-            string useWeatherFileRain,
-            string useWeatherFileSnow)
+            string dayOfWeek = null,
+            string useWeatherFileHolidays = null,
+            string useWeatherFileDst = null,
+            string applyWeekendHolidayRule = null,
+            string useWeatherFileRain = null,
+            string useWeatherFileSnow = null)
         {
             // Read the existing RunPeriod so its name can be reused in the replacement object
+            // Optional fields that were passed as null are resolved from the existing object here.
             IdfObject existingRunPeriod = idfReader["RunPeriod"].First();
             string runPeriodName = existingRunPeriod[0];
+
+            dayOfWeek = dayOfWeek ?? existingRunPeriod[7];
+            useWeatherFileHolidays = useWeatherFileHolidays ?? existingRunPeriod[8];
+            useWeatherFileDst = useWeatherFileDst ?? existingRunPeriod[9];
+            applyWeekendHolidayRule = applyWeekendHolidayRule ?? existingRunPeriod[10];
+            useWeatherFileRain = useWeatherFileRain ?? existingRunPeriod[11];
+            useWeatherFileSnow = useWeatherFileSnow ?? existingRunPeriod[12];
 
             string newRunPeriodIdfText = BuildRunPeriodIdfText(
                 runPeriodName,
