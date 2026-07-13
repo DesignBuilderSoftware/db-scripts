@@ -35,6 +35,7 @@ DISCLAIMER: This script is provided as-is without warranty. DesignBuilder takes 
 Users are responsible for validating all outputs and ensuring the script meets their specific modeling requirements.
 */
 
+using System.Runtime;
 using DB.Api;
 using DB.Extensibility.Contracts;
 using EpNet;
